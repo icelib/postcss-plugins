@@ -8,3 +8,14 @@ onlyBuiltDependencies:
   - esbuild
   - sharp
   - workerd
+minimumReleaseAge: 0
+versioning:
+  changelog:
+    storage: repository
+allowBuilds:
+  '@tailwindcss/oxide': true
+  esbuild: true
+  msgpackr-extract: true
+  sharp: true
+  vue-demi: true
+  workerd: true
