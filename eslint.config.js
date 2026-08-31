@@ -1,7 +1,5 @@
-import { icebreaker } from '@icebreakers/eslint-config'
+import { defineEslintConfig } from 'repoctl/tooling'
 
-export default icebreaker(
-  {
-    ignores: ['**/fixtures/**'],
-  },
-)
+export default await defineEslintConfig({
+  ignores: ['**/fixtures/**'],
+})

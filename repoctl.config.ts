@@ -1,0 +1,41 @@
+import type { MonorepoConfig } from 'repoctl'
+
+export default {
+  commands: {
+    create: {
+      defaultTemplate: 'unbuild',
+      renameJson: false,
+    },
+    clean: {
+      autoConfirm: false,
+      includePrivate: true,
+    },
+    upgrade: {
+      skipOverwrite: false,
+      mergeTargets: true,
+    },
+  },
+  tooling: {
+    commitlint: {
+      extends: ['@commitlint/config-conventional'],
+    },
+    eslint: {
+      ignores: ['**/fixtures/**'],
+    },
+    stylelint: {
+      rules: {},
+    },
+    lintStaged: {
+      repoCommand: 'pnpm exec repo',
+    },
+    vitest: {
+      includeWorkspaceRootConfig: false,
+      coverageExclude: ['**/dist/**'],
+      coverageSkipFull: true,
+    },
+    vitestProject: {
+      globals: true,
+      testTimeout: 60_000,
+    },
+  },
+} satisfies MonorepoConfig

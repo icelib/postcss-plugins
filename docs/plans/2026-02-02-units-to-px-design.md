@@ -55,7 +55,7 @@ Conversion rules:
 
 ## Implementation Plan
 
-- Scaffold `packages/postcss-units-to-px` with `npx monorepo create` using the `tsdown` template.
+- Scaffold `packages/postcss-units-to-px` with `pnpm exec repo package create` using the `tsdown` template.
 - Implement plugin with `createUnitRegex`, `createPropListMatcher`, `createExcludeMatcher`, `declarationExists`, and `maybeBlacklistedSelector`.
 - Replace values via regex, skipping strings, `url(...)`, and `var(...)`.
 - Support `mediaQuery` replacement on `@media` params.
