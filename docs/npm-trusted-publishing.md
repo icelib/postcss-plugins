@@ -10,14 +10,14 @@ short-lived publish credential for the current workflow run.
 Each publishable package must have this trusted publisher in npm package
 settings:
 
-| Setting      | Value             |
-| ------------ | ----------------- |
-| Provider     | GitHub Actions    |
-| Organization | `icelib`          |
-| Repository   | `postcss-plugins` |
-| Workflow     | `release.yml`     |
-| Environment  | Leave empty       |
-| Permission   | Publish           |
+| Setting         | Value             |
+| --------------- | ----------------- |
+| Provider        | GitHub Actions    |
+| Organization    | `icelib`          |
+| Repository      | `postcss-plugins` |
+| Workflow        | `release.yml`     |
+| Environment     | Leave empty       |
+| Allowed actions | `npm publish`     |
 
 Packages:
 
@@ -37,6 +37,14 @@ npm trust github <package> \
   --repo icelib/postcss-plugins \
   --allow-publish
 ```
+
+npm does not edit an existing trusted publisher in place. If a package still
+has a connection for `sonofmagic/postcss-plugins`, revoke that connection and
+create the `icelib/postcss-plugins` connection above. In the npm package
+publishing settings, select the `npm publish` action because new connections
+may default to stage-only. After the migration is verified, enable the
+package option to require two-factor authentication and disallow token-based
+publishing.
 
 The repository does not contain an npm token, and the workflow must not add
 `NODE_AUTH_TOKEN`, `NPM_TOKEN`, or another long-lived registry credential.
