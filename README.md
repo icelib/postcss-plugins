@@ -35,6 +35,10 @@ pnpm docs:build
 pnpm docs:preview
 ```
 
+Release publishing uses npm Trusted Publishing with GitHub Actions OIDC. See
+[`docs/npm-trusted-publishing.md`](docs/npm-trusted-publishing.md) for the
+package-level configuration.
+
 Useful scripts:
 
 - `pnpm build` - build all packages
@@ -47,7 +51,7 @@ Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 ## Contributors
 
-Thanks to [all contributors](https://github.com/sonofmagic/postcss-plugins/graphs/contributors)!
+Thanks to [all contributors](https://github.com/icelib/postcss-plugins/graphs/contributors)!
 
 ## Authors
 

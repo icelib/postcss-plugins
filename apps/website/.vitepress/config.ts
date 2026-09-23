@@ -64,12 +64,12 @@ export default defineConfig({
     siteTitle: 'postcss-plugins',
     search: { provider: 'local' },
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/sonofmagic/postcss-plugins' },
+      { icon: 'github', link: 'https://github.com/icelib/postcss-plugins' },
     ],
     nav: [
       { text: 'Guide', link: '/guide/choose-a-plugin' },
       { text: 'Plugins', link: '/plugins/postcss-plugin-shared/' },
-      { text: 'GitHub', link: 'https://github.com/sonofmagic/postcss-plugins' },
+      { text: 'GitHub', link: 'https://github.com/icelib/postcss-plugins' },
     ],
     sidebar: sharedSidebar,
     outline: 'deep',
@@ -94,7 +94,7 @@ export default defineConfig({
         nav: [
           { text: '指南', link: '/zh-CN/guide/choose-a-plugin' },
           { text: '插件', link: '/zh-CN/plugins/postcss-plugin-shared/' },
-          { text: 'GitHub', link: 'https://github.com/sonofmagic/postcss-plugins' },
+          { text: 'GitHub', link: 'https://github.com/icelib/postcss-plugins' },
         ],
         sidebar: zhSidebar,
         footer: {

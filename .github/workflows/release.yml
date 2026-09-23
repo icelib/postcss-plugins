@@ -38,6 +38,8 @@ on:
 
 env:
   HUSKY: 0
+  # npm Trusted Publishing exchanges this run's GitHub OIDC token for a short-lived
+  # publish credential. Do not add NODE_AUTH_TOKEN or an npm access token here.
   NPM_CONFIG_PROVENANCE: true
   npm_config_registry: https://registry.npmjs.org
 

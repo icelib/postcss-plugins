@@ -6,11 +6,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sonofmagic/postcss-plugins.git",
+    "url": "git+https://github.com/icelib/postcss-plugins.git",
     "directory": "packages/postcss-rem-to-viewport"
   },
   "bugs": {
-    "url": "https://github.com/sonofmagic/postcss-plugins/issues"
+    "url": "https://github.com/icelib/postcss-plugins/issues"
   },
   "keywords": [
     "viewport",

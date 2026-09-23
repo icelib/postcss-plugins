@@ -68,7 +68,7 @@ function packageLink(slug, locale, file) {
   if (extraFiles.has(base)) {
     return routeFor(slug, base, targetLocale)
   }
-  return `https://github.com/sonofmagic/postcss-plugins/blob/main/packages/${slug}/${normalized}`
+  return `https://github.com/icelib/postcss-plugins/blob/main/packages/${slug}/${normalized}`
 }
 
 function rewriteLinks(markdown, slug, locale) {
