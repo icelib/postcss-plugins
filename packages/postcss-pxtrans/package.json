@@ -1,7 +1,7 @@
 {
   "name": "postcss-pxtrans",
   "type": "module",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "PostCSS plugin that converts px units to rpx/rem/vw/px for multiple platforms.",
   "author": "ice breaker <1324318532@qq.com>",
   "license": "MIT",
@@ -67,8 +67,12 @@
     "compilerOptions": {
       "module": "NodeNext",
       "paths": {
-        "postcss-plugin-shared": ["../postcss-plugin-shared/dist/index.d.mts"],
-        "postcss-rule-unit-converter": ["../postcss-rule-unit-converter/dist/index.d.mts"]
+        "postcss-plugin-shared": [
+          "../postcss-plugin-shared/dist/index.d.mts"
+        ],
+        "postcss-rule-unit-converter": [
+          "../postcss-rule-unit-converter/dist/index.d.mts"
+        ]
       }
     }
   }

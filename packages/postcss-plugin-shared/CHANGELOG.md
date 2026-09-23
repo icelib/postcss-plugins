@@ -1,5 +1,11 @@
 # postcss-plugin-shared
 
+## 1.1.6
+
+### Patch Changes
+
+- Harden unit conversion edge cases, prevent `replace: false` fallback re-entry, improve large stylesheet performance, and expand release and type validation coverage.
+
 ## 1.1.5
 
 ### Patch Changes
