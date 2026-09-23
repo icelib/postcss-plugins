@@ -1,5 +1,9 @@
 import type { Rule } from 'postcss'
 
+function escapeRegExp(value: string) {
+  return value.replace(/[\\^$.*+?()[\]{}|]/g, String.raw`\$&`)
+}
+
 /**
  * Check whether a selector matches any blacklist rule.
  *
@@ -101,10 +105,6 @@ function createStringRuleMatcher(rule: string, mode: 'negative' | 'positive') {
   return function matchContains(prop: string) {
     return prop.includes(rule)
   }
-}
-
-function escapeRegExp(value: string) {
-  return value.replace(/[\\^$.*+?()[\]{}|]/g, String.raw`\$&`)
 }
 
 export function createPropListMatcher(propList: readonly (string | RegExp)[]) {

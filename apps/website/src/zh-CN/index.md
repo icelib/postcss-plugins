@@ -18,8 +18,8 @@ description: 面向响应式 CSS 与多端项目的 PostCSS 单位转换插件�
 贴近现有 PostCSS 流程的 CSS 单位转换工具。需要稳定的旧 API 时选择专用插件，需要组合多个规则时使用统一的 rule engine。
 
 <div class="hero-actions">
-  <a class="vp-button brand" href="/zh-CN/guide/choose-a-plugin">选择插件</a>
-  <a class="vp-button alt" href="/zh-CN/plugins/postcss-rule-unit-converter/">了解规则引擎</a>
+  <a class="VPButton medium brand" href="/zh-CN/guide/choose-a-plugin">选择插件</a>
+  <a class="VPButton medium alt" href="/zh-CN/plugins/postcss-rule-unit-converter/">了解规则引擎</a>
 </div>
 
 ## 快速选择
@@ -41,14 +41,3 @@ description: 面向响应式 CSS 与多端项目的 PostCSS 单位转换插件�
   <div><strong>输入 / 输出对照</strong><span>先看声明如何变化，再决定是否调整选项。</span></div>
   <div><strong>清晰的迁移路径</strong><span>通过并排示例从专用插件迁移到规则引擎。</span></div>
 </div>
-
-<style>
-.hero-kicker { color: var(--vp-c-brand-1); font: 600 12px/1.4 var(--vp-font-family-mono); letter-spacing: .16em; }
-.hero-declaration { margin: 28px 0; padding: 22px 26px; overflow-x: auto; border: 1px solid var(--vp-c-divider); background: var(--vp-c-bg-soft); color: var(--vp-c-text-1); font: 600 clamp(18px, 3vw, 34px)/1.4 var(--vp-font-family-mono); white-space: nowrap; }
-.token-selector { color: var(--vp-c-text-2); }.token-property { color: var(--vp-c-brand-1); }.token-source { color: #ffb86c; }.token-result { color: #b8f34a; }.token-arrow { margin: 0 .45em; color: #65e6ff; }
-.hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin: 26px 0 54px; }
-.feature-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 24px; }
-.feature-grid div { display: grid; gap: 8px; padding: 18px; border: 1px solid var(--vp-c-divider); background: var(--vp-c-bg-soft); }.feature-grid span { color: var(--vp-c-text-2); font-size: 14px; }
-@media (max-width: 640px) { .feature-grid { grid-template-columns: 1fr; } .hero-declaration { margin-inline: -8px; } }
-@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
-</style>

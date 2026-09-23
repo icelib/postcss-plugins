@@ -45,8 +45,53 @@ jobs:
       - name: Build documentation
         run: pnpm --filter @postcss-plugins/website build
 
+      - name: Verify generated documentation assets
+        run: |
+          test -s apps/website/.vitepress/dist/logo.svg
+          test -s apps/website/.vitepress/dist/favicon.svg
+          test -s apps/website/.vitepress/dist/robots.txt
+          test -s apps/website/.vitepress/dist/sitemap.xml
+          test -s apps/website/.vitepress/dist/_headers
+
       - name: Deploy to Cloudflare Workers
         run: pnpm exec wrangler deploy --config wrangler.jsonc
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Smoke test deployed documentation
+        env:
+          DOCS_URL: https://postcss.icebreaker.top
+        run: |
+          set -euo pipefail
+          for path in \
+            / \
+            /zh-CN/ \
+            /logo.svg \
+            /favicon.svg \
+            /robots.txt \
+            /sitemap.xml \
+            /plugins/postcss-plugin-shared/ \
+            /plugins/postcss-rem-to-responsive-pixel/ \
+            /plugins/postcss-rem-to-viewport/ \
+            /plugins/postcss-pxtrans/ \
+            /plugins/postcss-rule-unit-converter/ \
+            /plugins/postcss-rule-unit-converter/api \
+            /plugins/postcss-rule-unit-converter/cookbook \
+            /plugins/postcss-rule-unit-converter/migration \
+            /plugins/postcss-rule-unit-converter/preset-authoring \
+            /plugins/postcss-units-to-px/ \
+            /zh-CN/plugins/postcss-plugin-shared/ \
+            /zh-CN/plugins/postcss-rem-to-responsive-pixel/ \
+            /zh-CN/plugins/postcss-rem-to-viewport/ \
+            /zh-CN/plugins/postcss-pxtrans/ \
+            /zh-CN/plugins/postcss-rule-unit-converter/ \
+            /zh-CN/plugins/postcss-rule-unit-converter/api \
+            /zh-CN/plugins/postcss-rule-unit-converter/cookbook \
+            /zh-CN/plugins/postcss-rule-unit-converter/migration \
+            /zh-CN/plugins/postcss-rule-unit-converter/preset-authoring \
+            /zh-CN/plugins/postcss-units-to-px/; do
+            curl --fail --silent --show-error --location --retry 5 --retry-delay 2 --retry-all-errors "$DOCS_URL$path" -o /dev/null
+          done
+          test "$(curl --silent --show-error --location --retry 5 --retry-delay 2 --retry-all-errors -o /dev/null -w '%{http_code}' "$DOCS_URL/does-not-exist")" = 404
+          curl --fail --silent --show-error --location --retry 5 --retry-delay 2 --retry-all-errors -D - -o /dev/null "$DOCS_URL/" | grep -Eiq '^x-content-type-options:[[:space:]]*nosniff'

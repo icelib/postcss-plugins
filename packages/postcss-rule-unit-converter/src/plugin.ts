@@ -19,23 +19,68 @@ interface StringMatcherEntry {
   rule: ConversionRule
   type: 'string'
   unit: string
+  order: number
 }
 
 interface RegexMatcherEntry {
   matcher: RegExp
   rule: ConversionRule
   type: 'regex'
+  order: number
 }
 
 interface FunctionMatcherEntry {
   matcher: (unit: string) => boolean
   rule: ConversionRule
   type: 'function'
+  order: number
 }
 
 type NormalizedMatcher = StringMatcherEntry | RegexMatcherEntry | FunctionMatcherEntry
 
-function normalizeMatcher(matcher: UnitMatcher, rule: ConversionRule) {
+function countCapturingGroups(source: string) {
+  let count = 0
+  let escaped = false
+  let inClass = false
+
+  for (let index = 0; index < source.length; index += 1) {
+    const char = source[index]
+    if (escaped) {
+      escaped = false
+      continue
+    }
+    if (char === '\\') {
+      escaped = true
+      continue
+    }
+    if (char === '[') {
+      inClass = true
+      continue
+    }
+    if (char === ']' && inClass) {
+      inClass = false
+      continue
+    }
+    if (inClass || char !== '(') {
+      continue
+    }
+
+    if (source[index + 1] !== '?') {
+      count += 1
+      continue
+    }
+
+    // Named captures (`(?<unit>...)`) are positional captures too. Lookbehind
+    // uses `(?<=`/`(?<!` and must remain non-capturing here.
+    if (source[index + 2] === '<' && source[index + 3] !== '=' && source[index + 3] !== '!') {
+      count += 1
+    }
+  }
+
+  return count
+}
+
+function normalizeMatcher(matcher: UnitMatcher, rule: ConversionRule, order: number) {
   if (typeof matcher === 'string') {
     const unit = matcher.trim().toLowerCase()
     if (!unit) {
@@ -46,6 +91,7 @@ function normalizeMatcher(matcher: UnitMatcher, rule: ConversionRule) {
       rule,
       type: 'string',
       unit,
+      order,
     } satisfies StringMatcherEntry
   }
 
@@ -54,6 +100,7 @@ function normalizeMatcher(matcher: UnitMatcher, rule: ConversionRule) {
       matcher,
       rule,
       type: 'regex',
+      order,
     } satisfies RegexMatcherEntry
   }
 
@@ -62,6 +109,7 @@ function normalizeMatcher(matcher: UnitMatcher, rule: ConversionRule) {
       matcher,
       rule,
       type: 'function',
+      order,
     } satisfies FunctionMatcherEntry
   }
 
@@ -72,25 +120,17 @@ function normalizeRules(rules: readonly ConversionRule[]) {
   const entries: NormalizedMatcher[] = []
 
   for (const rule of rules) {
-    const entry = normalizeMatcher(rule.from, rule)
+    const entry = normalizeMatcher(rule.from, rule, entries.length)
     if (entry) {
       entries.push(entry)
     }
   }
 
   const hasComplexMatcher = entries.some(entry => entry.type !== 'string')
-  if (hasComplexMatcher) {
-    return {
-      entries,
-      stringRules: undefined,
-      hasComplexMatcher,
-    }
-  }
-
-  const stringRules = new Map<string, ConversionRule>()
+  const stringRules = new Map<string, StringMatcherEntry>()
   for (const entry of entries) {
     if (entry.type === 'string' && !stringRules.has(entry.unit)) {
-      stringRules.set(entry.unit, entry.rule)
+      stringRules.set(entry.unit, entry)
     }
   }
 
@@ -101,12 +141,21 @@ function normalizeRules(rules: readonly ConversionRule[]) {
   }
 }
 
-function getMatcherRule(entries: readonly NormalizedMatcher[], unit: string) {
+function getMatcherRuleWithStrings(
+  entries: readonly NormalizedMatcher[],
+  unit: string,
+  stringRules?: ReadonlyMap<string, StringMatcherEntry>,
+) {
+  const stringEntry = stringRules?.get(unit)
+  const stringOrder = stringEntry?.order ?? Number.POSITIVE_INFINITY
+
   for (const entry of entries) {
+    // A string rule is resolved from the map below. Once its original order
+    // is reached, no later rule can win over it.
+    if (entry.order >= stringOrder) {
+      break
+    }
     if (entry.type === 'string') {
-      if (entry.unit === unit) {
-        return entry.rule
-      }
       continue
     }
 
@@ -125,31 +174,43 @@ function getMatcherRule(entries: readonly NormalizedMatcher[], unit: string) {
     }
   }
 
-  return undefined
+  return stringEntry?.rule
 }
 
 function normalizeTransformResult(
-  result: number | { value: number, unit?: string } | undefined,
+  result: unknown,
   fallbackUnit: string,
 ) {
-  if (result === undefined || Number.isNaN(result)) {
+  if (result === undefined || result === null) {
     return null
   }
 
   if (typeof result === 'number') {
+    if (!Number.isFinite(result)) {
+      return null
+    }
     return {
       unit: fallbackUnit,
       value: result,
     }
   }
 
-  if (Number.isNaN(result.value)) {
+  if (typeof result !== 'object' || !('value' in result)) {
     return null
   }
 
+  const value = result.value
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return null
+  }
+
+  const unit = 'unit' in result && typeof result.unit === 'string'
+    ? result.unit
+    : fallbackUnit
+
   return {
-    unit: result.unit ?? fallbackUnit,
-    value: result.value,
+    unit,
+    value,
   }
 }
 
@@ -246,12 +307,15 @@ const plugin: PostcssUnitConverter = (options: UserDefinedOptions = {}) => {
   let normalizeUnitCase = true
 
   if (customUnitRegex) {
+    if (countCapturingGroups(customUnitRegex.source) < 2) {
+      throw new TypeError('unitRegex must provide numeric and unit capture groups')
+    }
     unitRegex = customUnitRegex
-    getRule = unit => getMatcherRule(entries, unit)
+    getRule = unit => getMatcherRuleWithStrings(entries, unit, stringRules)
   }
   else if (hasComplexMatcher) {
     unitRegex = createAnyUnitRegex()
-    getRule = unit => getMatcherRule(entries, unit)
+    getRule = unit => getMatcherRuleWithStrings(entries, unit, stringRules)
   }
   else {
     const units = Array.from(stringRules?.keys() ?? []).sort((a, b) => b.length - a.length)
@@ -259,7 +323,7 @@ const plugin: PostcssUnitConverter = (options: UserDefinedOptions = {}) => {
       return { postcssPlugin }
     }
     unitRegex = createUnitRegex(units)
-    getRule = unit => stringRules?.get(unit)
+    getRule = unit => stringRules?.get(unit)?.rule
     normalizeUnitCase = false
   }
 
@@ -267,6 +331,20 @@ const plugin: PostcssUnitConverter = (options: UserDefinedOptions = {}) => {
     postcssPlugin,
     Once(css) {
       type SharedWalkAndReplaceOptions = Parameters<typeof walkAndReplaceValues>[0]
+      // A declaration often contains the same unit several times (for example
+      // `margin: 1rem 2rem 1rem 2rem`). Complex matchers have to scan the
+      // ordered rule list, so resolve each distinct unit once per PostCSS root.
+      // Keep this cache local to the traversal: matcher callbacks may depend on
+      // the current build and must not leak results into a later file.
+      const resolvedRules = new Map<string, ConversionRule | undefined>()
+      const resolveRule = (unit: string) => {
+        if (resolvedRules.has(unit)) {
+          return resolvedRules.get(unit)
+        }
+        const rule = getRule(unit)
+        resolvedRules.set(unit, rule)
+        return rule
+      }
       const walkOptions: SharedWalkAndReplaceOptions = {
         root: css as unknown as SharedWalkAndReplaceOptions['root'],
         unitRegex,
@@ -277,7 +355,7 @@ const plugin: PostcssUnitConverter = (options: UserDefinedOptions = {}) => {
         mediaQuery,
         createReplacer: (context) => {
           return createReplace(
-            getRule,
+            resolveRule,
             unitPrecision,
             minValue,
             keepZeroUnit,

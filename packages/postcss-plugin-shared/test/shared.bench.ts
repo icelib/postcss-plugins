@@ -37,39 +37,39 @@ const overrides = {
 }
 
 describe('postcss-plugin-shared benchmarks', () => {
-  it('shared utility benchmarks', ({ bench }) => {
-    bench('toFixed', () => {
+  it('shared utility benchmarks', async ({ bench }) => {
+    await bench('toFixed', { writeResult: 'benchmarks/.vitest/to-fixed.json' }, () => {
       toFixed(12.3456, 3)
-    })
+    }).run()
 
-    bench('mergeOptions', () => {
+    await bench('mergeOptions', { writeResult: 'benchmarks/.vitest/merge-options.json' }, () => {
       mergeOptions(overrides, defaults)
-    })
+    }).run()
 
-    bench('declarationExists', () => {
+    await bench('declarationExists', { writeResult: 'benchmarks/.vitest/declaration-exists.json' }, () => {
       declarationExists(decls, 'font-size', '1rem')
-    })
+    }).run()
 
-    bench('remRegex replace', () => {
+    await bench('remRegex replace', { writeResult: 'benchmarks/.vitest/rem-regex.json' }, () => {
       remRegex.lastIndex = 0
       void remValue.replace(remRegex, '$1px')
-    })
+    }).run()
 
-    bench('pxRegex replace', () => {
+    await bench('pxRegex replace', { writeResult: 'benchmarks/.vitest/px-regex.json' }, () => {
       pxRegex.lastIndex = 0
       void pxValue.replace(pxRegex, '$1rem')
-    })
+    }).run()
 
-    bench('blacklistedSelector', () => {
+    await bench('blacklistedSelector', { writeResult: 'benchmarks/.vitest/blacklisted-selector.json' }, () => {
       blacklistedSelector(blacklist, sampleSelector)
-    })
+    }).run()
 
-    bench('createPropListMatcher', () => {
+    await bench('createPropListMatcher', { writeResult: 'benchmarks/.vitest/prop-list-matcher.json' }, () => {
       propMatcher('padding-left')
-    })
+    }).run()
 
-    bench('createExcludeMatcher', () => {
+    await bench('createExcludeMatcher', { writeResult: 'benchmarks/.vitest/exclude-matcher.json' }, () => {
       excludeMatcher('/project/node_modules/pkg/index.css')
-    })
+    }).run()
   })
 })

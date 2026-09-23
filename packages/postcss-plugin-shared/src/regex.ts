@@ -54,10 +54,15 @@ export function createUnitRegex(options: UnitRegexOptions) {
     parts.push(String.raw`url\([^)]+\)`)
   }
   if (skipVar) {
-    parts.push(String.raw`var\([^)]+\)`)
+    // Keep units inside common nested fallbacks such as
+    // `var(--gap, calc(1rem + 2px))` out of the conversion pass.
+    parts.push(String.raw`var\((?:[^()]|\([^()]*\))*\)`)
   }
 
-  const unitPart = units.map(u => u.replace(/[\\^$.*+?()[\]{}|]/g, String.raw`\$&`)).join('|')
+  const unitPart = [...units]
+    .sort((left, right) => right.length - left.length)
+    .map(unit => unit.replace(/[\\^$.*+?()[\]{}|]/g, String.raw`\$&`))
+    .join('|')
   parts.push(String.raw`(${numberPattern})(?:${unitPart})`)
 
   return new RegExp(parts.join('|'), `g${ignoreCase ? 'i' : ''}`)

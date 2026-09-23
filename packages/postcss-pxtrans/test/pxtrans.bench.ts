@@ -33,17 +33,17 @@ const h5Processor = postcss(pxtrans({
 const directiveProcessor = postcss(createDirectivePlugin({ platform: 'weapp' }))
 
 describe('postcss-pxtrans benchmarks', () => {
-  it('pxtrans benchmarks', ({ bench }) => {
-    bench('pxtrans transform', () => {
+  it('pxtrans benchmarks', async ({ bench }) => {
+    await bench('pxtrans transform', { writeResult: 'benchmarks/.vitest/pxtrans-transform.json' }, () => {
       void pxtransProcessor.process(baseCss, { from: 'bench.css' }).css
-    })
+    }).run()
 
-    bench('pxtrans h5 transform', () => {
+    await bench('pxtrans h5 transform', { writeResult: 'benchmarks/.vitest/pxtrans-h5-transform.json' }, () => {
       void h5Processor.process(baseCss, { from: 'bench-h5.css' }).css
-    })
+    }).run()
 
-    bench('pxtrans directives', () => {
+    await bench('pxtrans directives', { writeResult: 'benchmarks/.vitest/pxtrans-directives.json' }, () => {
       void directiveProcessor.process(directiveCss, { from: 'bench.css' }).css
-    })
+    }).run()
   })
 })

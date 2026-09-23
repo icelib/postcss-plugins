@@ -27,7 +27,7 @@
     "bench": "node scripts/bench/generate-benchmarks.mjs",
     "bench:baseline": "node scripts/bench/generate-benchmarks.mjs",
     "bench:report": "node scripts/bench/generate-benchmarks.mjs",
-    "check:cjs": "tsx scripts/check-cjs-plugins.mjs",
+    "check:cjs": "node scripts/check-cjs-plugins.mjs",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "tsd": "turbo run tsd",

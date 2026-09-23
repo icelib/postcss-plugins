@@ -52,6 +52,8 @@
     "build": "tsdown",
     "bench": "vitest bench",
     "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "tsd": "pnpm run build && tsd --typings dist/index.d.mts",
     "test:dev": "vitest",
     "release": "pnpm publish",
     "lint": "eslint .",
@@ -61,6 +63,16 @@
     "postcss": "^8"
   },
   "dependencies": {
-    "postcss-plugin-shared": "workspace:*"
+    "postcss-plugin-shared": "workspace:*",
+    "postcss-rule-unit-converter": "workspace:*"
+  },
+  "tsd": {
+    "compilerOptions": {
+      "module": "NodeNext",
+      "paths": {
+        "postcss-plugin-shared": ["../postcss-plugin-shared/dist/index.d.mts"],
+        "postcss-rule-unit-converter": ["../postcss-rule-unit-converter/dist/index.d.mts"]
+      }
+    }
   }
 }

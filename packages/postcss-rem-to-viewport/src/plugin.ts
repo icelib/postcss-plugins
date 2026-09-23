@@ -1,5 +1,5 @@
 import type { PostcssRemToViewport, UserDefinedOptions } from './types'
-import unitConverter, { presets } from '../../postcss-rule-unit-converter/src/index'
+import unitConverter, { presets } from 'postcss-rule-unit-converter'
 import { getConfig, postcssPlugin } from './shared'
 
 /**

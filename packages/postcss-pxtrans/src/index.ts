@@ -1,15 +1,16 @@
 import type { Input, Result, Root } from 'postcss'
-import type { ConversionRule } from '../../postcss-rule-unit-converter/src/types'
+import type { ConversionRule } from 'postcss-rule-unit-converter'
 import type {
   PxTransformMethod,
   PxTransformOptions,
   PxTransformTargetUnit,
 } from './types'
+import { emitWarning } from 'node:process'
 import {
   createAdvancedPropListMatcher,
   createSelectorBlacklistMatcher,
 } from 'postcss-plugin-shared'
-import unitConverter from '../../postcss-rule-unit-converter/src/index'
+import unitConverter from 'postcss-rule-unit-converter'
 import { pxRegex } from './pixel-unit-regex'
 
 export { createDirectivePlugin } from './directives'
@@ -42,8 +43,73 @@ const DEFAULT_WEAPP_OPTIONS: Required<Pick<PxTransformOptions, 'platform' | 'des
 const SPECIAL_PIXEL = ['Px', 'PX', 'pX'] as const
 const SPECIAL_PIXEL_SET = new Set<string>(SPECIAL_PIXEL)
 const postcssPlugin = 'postcss-pxtrans'
+const warnedLegacyOptions = new Set<string>()
 
 type RootValueFn = (input: Input, m: string, value: string) => number
+
+function warnLegacyOption(alias: string, replacement: string) {
+  if (warnedLegacyOptions.has(alias)) {
+    return
+  }
+  warnedLegacyOptions.add(alias)
+  emitWarning(
+    `postcss-pxtrans option "${alias}" is deprecated; use "${replacement}" instead.`,
+    { code: 'POSTCSS_PXTRANS_LEGACY_OPTION', type: 'DeprecationWarning' },
+  )
+}
+
+function normalizeLegacyOptions(userOptions: PxTransformOptions) {
+  const normalized = { ...userOptions }
+  if (normalized.rootValue === undefined && userOptions.root_value !== undefined) {
+    normalized.rootValue = userOptions.root_value
+    warnLegacyOption('root_value', 'rootValue')
+  }
+  if (normalized.unitPrecision === undefined && userOptions.unit_precision !== undefined) {
+    normalized.unitPrecision = userOptions.unit_precision
+    warnLegacyOption('unit_precision', 'unitPrecision')
+  }
+  if (normalized.selectorBlackList === undefined && userOptions.selector_black_list !== undefined) {
+    normalized.selectorBlackList = userOptions.selector_black_list
+    warnLegacyOption('selector_black_list', 'selectorBlackList')
+  }
+  if (normalized.propList === undefined && userOptions.prop_list !== undefined) {
+    normalized.propList = userOptions.prop_list
+    warnLegacyOption('prop_list', 'propList')
+  }
+  if (normalized.mediaQuery === undefined && userOptions.media_query !== undefined) {
+    normalized.mediaQuery = userOptions.media_query
+    warnLegacyOption('media_query', 'mediaQuery')
+  }
+  if (normalized.minPixelValue === undefined && userOptions.min_pixel_value !== undefined) {
+    normalized.minPixelValue = userOptions.min_pixel_value
+    warnLegacyOption('min_pixel_value', 'minPixelValue')
+  }
+  if (normalized.onePxTransform === undefined && userOptions.one_px_transform !== undefined) {
+    normalized.onePxTransform = userOptions.one_px_transform
+    warnLegacyOption('one_px_transform', 'onePxTransform')
+  }
+  if (normalized.baseFontSize === undefined && userOptions.base_font_size !== undefined) {
+    normalized.baseFontSize = userOptions.base_font_size
+    warnLegacyOption('base_font_size', 'baseFontSize')
+  }
+  if (normalized.minRootSize === undefined && userOptions.min_root_size !== undefined) {
+    normalized.minRootSize = userOptions.min_root_size
+    warnLegacyOption('min_root_size', 'minRootSize')
+  }
+  if (normalized.targetUnit === undefined && userOptions.target_unit !== undefined) {
+    normalized.targetUnit = userOptions.target_unit
+    warnLegacyOption('target_unit', 'targetUnit')
+  }
+  if (normalized.designWidth === undefined && userOptions.design_width !== undefined) {
+    normalized.designWidth = userOptions.design_width
+    warnLegacyOption('design_width', 'designWidth')
+  }
+  if (normalized.deviceRatio === undefined && userOptions.device_ratio !== undefined) {
+    normalized.deviceRatio = userOptions.device_ratio
+    warnLegacyOption('device_ratio', 'deviceRatio')
+  }
+  return normalized
+}
 
 function normalizeRootValue(value: unknown): RootValueFn {
   if (typeof value === 'function') {
@@ -83,9 +149,10 @@ function normalizeRootValue(value: unknown): RootValueFn {
  * })]).process('.a{padding:16px}', { from: undefined })
  */
 function plugin(userOptions: PxTransformOptions = {}) {
+  const normalizedUserOptions = normalizeLegacyOptions(userOptions)
   const options: Required<Pick<PxTransformOptions, 'platform' | 'designWidth' | 'deviceRatio'>> & PxTransformOptions = {
     ...DEFAULT_WEAPP_OPTIONS,
-    ...userOptions,
+    ...normalizedUserOptions,
   }
 
   const exclude: PxTransformOptions['exclude'] = options.exclude
@@ -169,11 +236,11 @@ function plugin(userOptions: PxTransformOptions = {}) {
   /* c8 ignore end */
 
   /* c8 ignore start */
-  const resolvedRootValue = typeof userOptions.rootValue !== 'undefined'
-    ? userOptions.rootValue
+  const resolvedRootValue = typeof normalizedUserOptions.rootValue !== 'undefined'
+    ? normalizedUserOptions.rootValue
     : computedRootValue ?? defaults.rootValue
   const cacheComputedRootValue
-    = typeof userOptions.rootValue === 'undefined'
+    = typeof normalizedUserOptions.rootValue === 'undefined'
       && typeof resolvedRootValue === 'function'
       && (resolvedRootValue as RootValueFn).length <= 1
 
@@ -301,7 +368,9 @@ function plugin(userOptions: PxTransformOptions = {}) {
               }
               return from ? Boolean(from.match(rule)) : false
             })
-          : exclude(from)
+          : typeof exclude === 'function'
+            ? exclude(from)
+            : false
         : false
 
       return {

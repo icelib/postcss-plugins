@@ -24,21 +24,21 @@ const mediumCSS = makeRules(200)
 const largeCSS = makeRules(2000)
 
 describe('postcss-rem-to-viewport benchmark', () => {
-  it('rem-to-viewport benchmarks', ({ bench }) => {
-    bench('small stylesheet', async () => {
+  it('rem-to-viewport benchmarks', async ({ bench }) => {
+    await bench('small stylesheet', { writeResult: 'benchmarks/.vitest/small.json' }, async () => {
       await processor.process(smallCSS, { from: 'small.css' })
-    })
+    }).run()
 
-    bench('medium stylesheet', async () => {
+    await bench('medium stylesheet', { writeResult: 'benchmarks/.vitest/medium.json' }, async () => {
       await processor.process(mediumCSS, { from: 'medium.css' })
-    })
+    }).run()
 
-    bench('large stylesheet', async () => {
+    await bench('large stylesheet', { writeResult: 'benchmarks/.vitest/large.json' }, async () => {
       await processor.process(largeCSS, { from: 'large.css' })
-    })
+    }).run()
 
-    bench('medium stylesheet with media queries', async () => {
+    await bench('medium stylesheet with media queries', { writeResult: 'benchmarks/.vitest/medium-stylesheet-with-media-queries.json' }, async () => {
       await mediaProcessor.process(`@media (min-width: 20rem) { ${mediumCSS} }`, { from: 'media.css' })
-    })
+    }).run()
   })
 })

@@ -4,6 +4,15 @@ import unitConverter from '../../postcss-rule-unit-converter/src/index'
 import { pxRegex } from '../src/pixel-unit-regex'
 import { transform } from './utils'
 
+describe('pxRegex', () => {
+  it('matches longer overlapping units before shorter units', () => {
+    const regex = pxRegex(['p', 'px'])
+    const output = 'a:1px;b:2p;'.replace(regex, match => match.toUpperCase())
+
+    expect(output).toBe('a:1PX;b:2P;')
+  })
+})
+
 describe('platform weapp', () => {
   it('{platform: weapp, designWidth: 750}', () => {
     const rules = 'h1 {margin: 0 0 20px;font-size: 40Px;line-height: 1.2;}'

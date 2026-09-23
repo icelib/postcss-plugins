@@ -61,6 +61,9 @@ function routeFor(slug, name, locale) {
 function packageLink(slug, locale, file) {
   const targetLocale = file.endsWith('.zh-CN.md') ? locales[1] : file.endsWith('.md') ? locales[0] : locale
   const normalized = file.replace(/^\.\//, '').replace(/\.zh-CN(?=\.md$)/, '')
+  if (normalized.toLowerCase() === 'v6.md') {
+    return `https://github.com/icelib/postcss-plugins/blob/main/packages/${slug}/CHANGELOG.md#610`
+  }
   if (normalized === 'README.md') {
     return routeFor(slug, 'README', targetLocale)
   }
@@ -72,24 +75,26 @@ function packageLink(slug, locale, file) {
 }
 
 function rewriteLinks(markdown, slug, locale) {
-  return markdown.replace(/\]\(([^)]+)\)/g, (match, target) => {
-    if (/^(?:https?:|#|mailto:|javascript:)/.test(target)) {
-      return match
-    }
-    const [pathPart, hash = ''] = target.split('#', 2)
-    if (!pathPart) {
-      return match
-    }
-    let targetSlug = slug
-    let targetFile = pathPart
-    const sibling = pathPart.match(/^\.\.\/(postcss-[^/]+)\/(.+)$/)
-    if (sibling) {
-      targetSlug = sibling[1]
-      targetFile = sibling[2]
-    }
-    const rewritten = packageLink(targetSlug, locale, targetFile)
-    return `](${rewritten}${hash ? `#${hash}` : ''})`
-  })
+  const rewritten = markdown.replaceAll('https://github.com/ai/postcss', 'https://github.com/postcss/postcss')
+    .replace(/\]\(([^)]+)\)/g, (match, target) => {
+      if (/^(?:https?:|#|mailto:|javascript:)/.test(target)) {
+        return match
+      }
+      const [pathPart, hash = ''] = target.split('#', 2)
+      if (!pathPart) {
+        return match
+      }
+      let targetSlug = slug
+      let targetFile = pathPart
+      const sibling = pathPart.match(/^\.\.\/(postcss-[^/]+)\/(.+)$/)
+      if (sibling) {
+        targetSlug = sibling[1]
+        targetFile = sibling[2]
+      }
+      const rewritten = packageLink(targetSlug, locale, targetFile)
+      return `](${rewritten}${hash ? `#${hash}` : ''})`
+    })
+  return rewritten.replaceAll('`./v6.md`', `[v6 changelog](${packageLink(slug, locale, 'v6.md')})`)
 }
 
 async function syncLocale(locale) {
@@ -121,6 +126,7 @@ await mkdir(generatedRoot, { recursive: true })
 await cp(join(sourceRoot, 'index.md'), join(generatedRoot, 'index.md'))
 await cp(join(sourceRoot, 'guide'), join(generatedRoot, 'guide'), { recursive: true })
 await cp(join(sourceRoot, 'zh-CN'), join(generatedRoot, 'zh-CN'), { recursive: true })
+await cp(join(siteRoot, 'public'), join(generatedRoot, 'public'), { recursive: true })
 await syncLocale(locales[0])
 await syncLocale(locales[1])
 

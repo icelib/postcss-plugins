@@ -19,6 +19,12 @@ describe('directives plugin', () => {
     expect(processed).toBe('/*  #ifdef  rn  *//*  #endif  */ .test{}')
   })
 
+  it('should support tabs and nested conditional blocks', () => {
+    const rules = '/*\t#ifdef\t rn\t*/ .outer{} /* #ifdef android */ .inner{} /* #endif */ .after{} /* #endif */ .keep{}'
+    const processed = transform(rules, { platform: 'h5' })
+    expect(processed).toBe('/*\t#ifdef\t rn\t*/ /* #endif */ .keep{}')
+  })
+
   it('should handle #ifndef remove', () => {
     const rules = '/*  #ifndef  h5  */ h1 {margin: 0 0 20px;font-size: 40Px;line-height: 1.2;}/*  #endif  */ .test{}'
     const processed = transform(rules, { platform: 'h5', designWidth: 640 })

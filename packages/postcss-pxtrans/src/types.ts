@@ -172,6 +172,31 @@ export interface PxTransformOptions {
    *
    * @default undefined
    */
-  exclude?: (filePath?: string) => boolean
+  exclude?: readonly (string | RegExp)[] | ((filePath?: string) => boolean)
+
+  /** @deprecated Use `rootValue`. */
+  root_value?: PxTransformOptions['rootValue']
+  /** @deprecated Use `unitPrecision`. */
+  unit_precision?: PxTransformOptions['unitPrecision']
+  /** @deprecated Use `selectorBlackList`. */
+  selector_black_list?: PxTransformOptions['selectorBlackList']
+  /** @deprecated Use `propList`. */
+  prop_list?: PxTransformOptions['propList']
+  /** @deprecated Use `mediaQuery`. */
+  media_query?: PxTransformOptions['mediaQuery']
+  /** @deprecated Use `minPixelValue`. */
+  min_pixel_value?: PxTransformOptions['minPixelValue']
+  /** @deprecated Use `onePxTransform`. */
+  one_px_transform?: PxTransformOptions['onePxTransform']
+  /** @deprecated Use `baseFontSize`. */
+  base_font_size?: PxTransformOptions['baseFontSize']
+  /** @deprecated Use `minRootSize`. */
+  min_root_size?: PxTransformOptions['minRootSize']
+  /** @deprecated Use `targetUnit`. */
+  target_unit?: PxTransformOptions['targetUnit']
+  /** @deprecated Use `designWidth`. */
+  design_width?: PxTransformOptions['designWidth']
+  /** @deprecated Use `deviceRatio`. */
+  device_ratio?: PxTransformOptions['deviceRatio']
 
 }

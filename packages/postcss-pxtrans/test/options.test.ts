@@ -31,6 +31,16 @@ describe('options & rootValue', () => {
     expect(processed).toBe('.rule{width:2rem}')
   })
 
+  it('should support legacy snake_case option aliases', () => {
+    const processed = transform('.rule{width:20px}', {
+      platform: 'h5',
+      design_width: 750,
+      root_value: 10,
+      unit_precision: 2,
+    })
+    expect(processed).toBe('.rule{width:2rem}')
+  })
+
   it('should fall back to default rootValue when invalid type provided', () => {
     const processed = transform('.rule{width:16px}', {
       platform: 'h5',

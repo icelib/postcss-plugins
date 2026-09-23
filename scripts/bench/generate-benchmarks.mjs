@@ -32,10 +32,16 @@ for (const arg of rawArgs) {
     continue
   }
 
+  if (arg.startsWith('--compare=')) {
+    cliOptions.set('compare', arg.slice('--compare='.length))
+    continue
+  }
+
   filters.push(arg)
 }
 
 const label = cliOptions.get('label') ?? process.env.BENCHMARK_LABEL ?? new Date().toISOString().slice(0, 10)
+const compareLabel = cliOptions.get('compare') ?? process.env.BENCHMARK_COMPARE
 const timestamp = new Date().toISOString().replace('T', ' ').replace('Z', ' UTC')
 
 const tableHeaders = [
@@ -44,6 +50,7 @@ const tableHeaders = [
   'min',
   'max',
   'mean',
+  'median',
   'p75',
   'p99',
   'p995',
@@ -72,6 +79,7 @@ function formatRow(bench) {
     formatNumber(bench.min),
     formatNumber(bench.max),
     formatNumber(bench.mean),
+    formatNumber(bench.median),
     formatNumber(bench.p75),
     formatNumber(bench.p99),
     formatNumber(bench.p995),
@@ -161,6 +169,94 @@ function normalizePackageFilter(entries) {
   return new Set(normalized)
 }
 
+function slugify(name) {
+  return name.toLowerCase().replace(/[^a-z0-9]/g, '')
+}
+
+function benchmarkFromResult(filePath) {
+  const result = JSON.parse(fs.readFileSync(filePath, 'utf8'))
+  const latency = result.latency
+  const throughput = result.throughput
+  const stem = path.basename(filePath, '.json')
+  return {
+    name: stem.replaceAll('-', ' '),
+    hz: throughput.mean,
+    min: latency.min,
+    max: latency.max,
+    mean: latency.mean,
+    median: latency.p50,
+    p75: latency.p75,
+    p99: latency.p99,
+    p995: latency.p995,
+    p999: latency.p999,
+    rme: latency.rme,
+    sampleCount: latency.samplesCount,
+  }
+}
+
+function reportFromResultDirectory(resultDir, packageDir) {
+  const files = fs.readdirSync(resultDir)
+    .filter(file => file.endsWith('.json'))
+    .sort()
+  if (!files.length) {
+    throw new Error(`No benchmark result files were written in ${resultDir}`)
+  }
+
+  const benchmarks = files.map(file => benchmarkFromResult(path.join(resultDir, file)))
+  return {
+    files: [{
+      filepath: path.join(packageDir, 'test'),
+      groups: [{
+        fullName: 'Vitest 5 benchmark context',
+        benchmarks,
+      }],
+    }],
+  }
+}
+
+function readBaselineBenchmarks(packageDir, baselineLabel) {
+  if (!baselineLabel) {
+    return new Map()
+  }
+
+  const baselinePath = path.join(packageDir, 'benchmarks', `${baselineLabel}.json`)
+  if (!fs.existsSync(baselinePath)) {
+    throw new Error(`Benchmark baseline not found: ${baselinePath}`)
+  }
+
+  const baseline = JSON.parse(fs.readFileSync(baselinePath, 'utf8'))
+  const entries = baseline.files?.flatMap(file => file.groups ?? []).flatMap(group => group.benchmarks ?? []) ?? []
+  return new Map(entries.map(entry => [slugify(entry.name), entry]))
+}
+
+function compareBenchmarks(pkgName, benchmarks, baseline, threshold = 0.1) {
+  if (!baseline.size) {
+    return []
+  }
+
+  const regressions = []
+  for (const current of benchmarks) {
+    const previous = baseline.get(slugify(current.name))
+    if (!previous) {
+      continue
+    }
+
+    const previousMedian = previous.median ?? previous.mean
+    const currentMedian = current.median ?? current.mean
+    const medianDelta = previousMedian > 0 ? (currentMedian - previousMedian) / previousMedian : 0
+    const p99Delta = previous.p99 > 0 ? (current.p99 - previous.p99) / previous.p99 : 0
+    if (medianDelta > threshold || p99Delta > threshold) {
+      regressions.push({
+        package: pkgName,
+        benchmark: current.name,
+        medianDelta,
+        p99Delta,
+      })
+    }
+  }
+  return regressions
+}
+
 function hasBenchFiles(packageDir) {
   const testDir = path.join(packageDir, 'test')
   if (!fs.existsSync(testDir)) {
@@ -231,6 +327,7 @@ async function runBenchmarks() {
   fs.mkdirSync(summaryDir, { recursive: true })
 
   const summaryItems = []
+  const allRegressions = []
 
   for (const packageDir of packageDirs) {
     const packageJsonPath = path.join(packageDir, 'package.json')
@@ -240,10 +337,13 @@ async function runBenchmarks() {
     const outputDir = path.join(packageDir, 'benchmarks')
     const outputJsonPath = path.join(outputDir, `${label}.json`)
     const outputMarkdownPath = path.join(outputDir, `${label}.md`)
+    const resultDir = path.join(outputDir, '.vitest')
 
     fs.mkdirSync(outputDir, { recursive: true })
+    fs.rmSync(resultDir, { recursive: true, force: true })
+    fs.mkdirSync(resultDir, { recursive: true })
 
-    const command = `pnpm -C ${path.relative(rootDir, packageDir)} exec vitest bench --outputJson benchmarks/${label}.json`
+    const command = `pnpm -C ${path.relative(rootDir, packageDir)} exec vitest bench`
 
     execFileSync('pnpm', [
       '-C',
@@ -251,25 +351,40 @@ async function runBenchmarks() {
       'exec',
       'vitest',
       'bench',
-      '--outputJson',
-      `benchmarks/${label}.json`,
+      '--no-color',
     ], { stdio: 'inherit' })
 
-    const report = JSON.parse(fs.readFileSync(outputJsonPath, 'utf8'))
+    const report = reportFromResultDirectory(resultDir, packageDir)
+    const benchmarks = report.files.flatMap(file => file.groups).flatMap(group => group.benchmarks)
+    const regressions = compareBenchmarks(
+      pkgName,
+      benchmarks,
+      readBaselineBenchmarks(packageDir, compareLabel),
+    )
+    if (regressions.length) {
+      console.error(`Benchmark regression over 10% detected in ${pkgName}`)
+      for (const regression of regressions) {
+        console.error(`  ${regression.benchmark}: median ${(regression.medianDelta * 100).toFixed(1)}%, p99 ${(regression.p99Delta * 100).toFixed(1)}%`)
+      }
+    }
+    fs.writeFileSync(outputJsonPath, JSON.stringify(report, null, 2))
     const markdown = buildReportMarkdown(pkgName, version, command, report)
 
     fs.writeFileSync(outputMarkdownPath, markdown)
+    fs.rmSync(resultDir, { recursive: true, force: true })
 
     const groups = report.files.flatMap(file => file.groups)
     const benchmarkCount = groups.reduce((total, group) => total + group.benchmarks.length, 0)
 
     summaryItems.push({
       count: benchmarkCount,
+      regressions,
       jsonRel: path.relative(summaryDir, outputJsonPath).replaceAll(path.sep, '/'),
       markdownRel: path.relative(summaryDir, outputMarkdownPath).replaceAll(path.sep, '/'),
       name: pkgName,
       version,
     })
+    allRegressions.push(...regressions)
   }
 
   const summaryMarkdownPath = path.join(summaryDir, 'SUMMARY.md')
@@ -281,9 +396,14 @@ async function runBenchmarks() {
     label,
     nodeVersion,
     packages: summaryItems,
+    compareLabel: compareLabel ?? null,
     pnpmVersion,
     vitestVersion,
   }, null, 2))
+
+  if (allRegressions.length) {
+    throw new Error(`Benchmark regression threshold exceeded for ${allRegressions.length} benchmark(s).`)
+  }
 }
 
 await runBenchmarks()

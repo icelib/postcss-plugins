@@ -18,17 +18,17 @@ const mediaProcessor = postcss(remToPx({ propList: ['*'], mediaQuery: true }))
 const rpxProcessor = postcss(remToPx({ propList: ['*'], transformUnit: 'rpx' }))
 
 describe('rem-to-responsive-pixel bench', () => {
-  it('rem-to-responsive-pixel benchmarks', ({ bench }) => {
-    bench('default transform (propList=*)', () => {
+  it('rem-to-responsive-pixel benchmarks', async ({ bench }) => {
+    await bench('default transform (propList=*)', { writeResult: 'benchmarks/.vitest/default-transform-prop-list.json' }, () => {
       void defaultProcessor.process(sampleCss, { from: 'bench.css' }).css
-    })
+    }).run()
 
-    bench('media queries enabled', () => {
+    await bench('media queries enabled', { writeResult: 'benchmarks/.vitest/media-queries-enabled.json' }, () => {
       void mediaProcessor.process(sampleCss, { from: 'bench.css' }).css
-    })
+    }).run()
 
-    bench('rpx transform large stylesheet', () => {
+    await bench('rpx transform large stylesheet', { writeResult: 'benchmarks/.vitest/rpx-transform-large.json' }, () => {
       void rpxProcessor.process(largerCss, { from: 'bench-rpx.css' }).css
-    })
+    }).run()
   })
 })

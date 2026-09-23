@@ -7,11 +7,29 @@ interface DirectiveState {
   skip: boolean
 }
 
+function normalizeCommentText(text: string) {
+  return text.trim().replace(/\s+/g, ' ')
+}
+
+function isConditionalDirective(text: string) {
+  return /#(?:if|ifdef|ifndef)\b/.test(text)
+}
+
 function removeUntilEndif(comment: Comment) {
+  let depth = 0
   let next = comment.next()
   while (next) {
-    if (next.type === 'comment' && next.text.trim() === '#endif') {
-      break
+    if (next.type === 'comment') {
+      const text = normalizeCommentText(next.text)
+      if (isConditionalDirective(text)) {
+        depth += 1
+      }
+      else if (text === '#endif') {
+        if (depth === 0) {
+          break
+        }
+        depth -= 1
+      }
     }
     const temp = next.next()
     next.remove()
@@ -20,7 +38,7 @@ function removeUntilEndif(comment: Comment) {
 }
 
 function handleIfdef(comment: Comment, platform: PxTransformPlatform) {
-  const wordList = comment.text.split(' ')
+  const wordList = normalizeCommentText(comment.text).split(' ')
   if (!wordList.includes('#ifdef')) {
     return
   }
@@ -31,7 +49,7 @@ function handleIfdef(comment: Comment, platform: PxTransformPlatform) {
 }
 
 function handleIfndef(comment: Comment, platform: PxTransformPlatform) {
-  const wordList = comment.text.split(' ')
+  const wordList = normalizeCommentText(comment.text).split(' ')
   if (!wordList.includes('#ifndef')) {
     return
   }
@@ -42,12 +60,12 @@ function handleIfndef(comment: Comment, platform: PxTransformPlatform) {
 }
 
 function handleRnEject(comment: Comment) {
-  if (comment.text !== 'postcss-pxtrans rn eject enable') {
+  if (normalizeCommentText(comment.text) !== 'postcss-pxtrans rn eject enable') {
     return
   }
   let next = comment.next()
   while (next) {
-    if (next.type === 'comment' && next.text === 'postcss-pxtrans rn eject disable') {
+    if (next.type === 'comment' && normalizeCommentText(next.text) === 'postcss-pxtrans rn eject disable') {
       break
     }
     const temp = next.next()
@@ -85,7 +103,7 @@ export function createDirectivePlugin(options: PxTransformOptions = {}) {
 
       return {
         Comment(comment: Comment) {
-          if (comment.text === 'postcss-pxtrans disable') {
+          if (normalizeCommentText(comment.text) === 'postcss-pxtrans disable') {
             state.skip = true
             root.raws.__pxtransSkip = true
             return

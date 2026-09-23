@@ -10,6 +10,7 @@ export default defineConfig([
     dts: true,
     clean: true,
     target: 'node18',
+    deps: { neverBundle: ['postcss-plugin-shared', 'postcss-rule-unit-converter'] },
     failOnWarn: false,
   },
   {
@@ -20,6 +21,7 @@ export default defineConfig([
     dts: true,
     clean: false,
     target: 'node18',
+    deps: { neverBundle: ['postcss-plugin-shared', 'postcss-rule-unit-converter'] },
     failOnWarn: false,
   },
   {
@@ -30,6 +32,7 @@ export default defineConfig([
     dts: true,
     clean: false,
     target: 'node18',
+    deps: { neverBundle: ['postcss-plugin-shared', 'postcss-rule-unit-converter'] },
     failOnWarn: false,
   },
 ])

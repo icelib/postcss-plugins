@@ -18,12 +18,17 @@ export const postcssPlugin = packageName
 export const getConfig = createConfigGetter(defaultOptions)
 
 export function createUnitRegex(units: readonly string[]) {
-  const unitPart = units.map(unit => unit.replace(/[\\^$.*+?()[\]{}|]/g, String.raw`\$&`)).join('|')
+  // Match longer units first so overlapping units such as `p` and `px` do
+  // not consume a valid value partially (`1px` -> `1p` + `x`).
+  const unitPart = [...units]
+    .sort((left, right) => right.length - left.length)
+    .map(unit => unit.replace(/[\\^$.*+?()[\]{}|]/g, String.raw`\$&`))
+    .join('|')
   const parts: string[] = [
     String.raw`"[^"]+"`,
     String.raw`'[^']+'`,
     String.raw`url\([^)]+\)`,
-    String.raw`var\([^)]+\)`,
+    String.raw`var\((?:[^()]|\([^()]*\))*\)`,
     String.raw`(${DEFAULT_NUMBER_PATTERN})(${unitPart})`,
   ]
   return new RegExp(parts.join('|'), 'g')
@@ -34,8 +39,10 @@ export function createAnyUnitRegex() {
     String.raw`"[^"]+"`,
     String.raw`'[^']+'`,
     String.raw`url\([^)]+\)`,
-    String.raw`var\([^)]+\)`,
-    String.raw`(${DEFAULT_NUMBER_PATTERN})([a-zA-Z%]+)`,
+    String.raw`var\((?:[^()]|\([^()]*\))*\)`,
+    // CSS dimension units are identifiers. Keep the broad matcher permissive
+    // enough for custom units such as `u2`, while retaining `%` support.
+    String.raw`(${DEFAULT_NUMBER_PATTERN})([a-zA-Z%-][\w%-]*)`,
   ]
   return new RegExp(parts.join('|'), 'g')
 }

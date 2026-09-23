@@ -1,5 +1,6 @@
 {
   "name": "postcss-rem-to-viewport",
+  "type": "module",
   "version": "2.0.5",
   "description": "Convert rem units to viewport units using PostCSS.",
   "author": "ice breaker <1324318532@qq.com>",
@@ -34,6 +35,8 @@
     "dev": "tsdown -w",
     "build": "tsdown",
     "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "tsd": "pnpm run build && tsd --typings dist/index.d.mts",
     "test:dev": "vitest",
     "bench": "vitest bench",
     "release": "pnpm publish",
@@ -44,7 +47,8 @@
     "postcss": "^8"
   },
   "dependencies": {
-    "postcss-plugin-shared": "workspace:*"
+    "postcss-plugin-shared": "workspace:*",
+    "postcss-rule-unit-converter": "workspace:*"
   },
   "publishConfig": {
     "exports": {
@@ -60,5 +64,14 @@
     "main": "./dist/index.require.cjs",
     "module": "./dist/index.mjs",
     "types": "./dist/index.d.mts"
+  },
+  "tsd": {
+    "compilerOptions": {
+      "module": "NodeNext",
+      "paths": {
+        "postcss-plugin-shared": ["../postcss-plugin-shared/dist/index.d.mts"],
+        "postcss-rule-unit-converter": ["../postcss-rule-unit-converter/dist/index.d.mts"]
+      }
+    }
   }
 }

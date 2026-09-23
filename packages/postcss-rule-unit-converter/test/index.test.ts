@@ -3,6 +3,7 @@ import type { ConversionRule, UnitMatcher, UnitRule } from '../src/index'
 import postcss from 'postcss'
 import unitConverter, {
   composeRules,
+  createUnitRegex,
   definePreset,
   definePresetGroup,
   presets,
@@ -24,6 +25,13 @@ type _ComposedRulesElementIsNotAny = Expect<IsEqual<IsAny<ComposedRulesType[numb
 type _ComposedRulesReturnType = Expect<IsEqual<ComposedRulesType, ConversionRule[]>>
 
 describe('postcss-rule-unit-converter', () => {
+  it('matches longer overlapping units before shorter units', () => {
+    const regex = createUnitRegex(['p', 'px'])
+    const output = 'a:1px;b:2p;'.replace(regex, match => match.toUpperCase())
+
+    expect(output).toBe('a:1PX;b:2P;')
+  })
+
   it('converts with custom rules', () => {
     const input = '.rule { font-size: 1rem; width: 100px; }'
     const output = '.rule { font-size: 16px; width: 26.66667vw; }'
@@ -160,6 +168,16 @@ describe('postcss-rule-unit-converter', () => {
     expect(processed).toBe(output)
   })
 
+  it('keeps nested var() fallbacks unchanged', () => {
+    const input = '.rule { width: var(--gap, calc(1rem + 2rem)); font-size: 1rem; }'
+    const output = '.rule { width: var(--gap, calc(1rem + 2rem)); font-size: 16px; }'
+    const processed = postcss(unitConverter({
+      rules: [presets.remToPx()],
+    })).process(input).css
+
+    expect(processed).toBe(output)
+  })
+
   it('supports regex matchers and full custom transforms', () => {
     const input = '.rule { inset: 1foo 2bar; }'
     const output = '.rule { inset: 10px 2bar; }'
@@ -218,6 +236,73 @@ describe('postcss-rule-unit-converter', () => {
     })).process(input).css
 
     expect(processed).toBe(output)
+  })
+
+  it('normalizes non-global custom unitRegex values', () => {
+    const processed = postcss(unitConverter({
+      rules: [{ from: 'px', to: 'rem', factor: 2 }],
+      unitRegex: /(\d+)(px)/,
+      propList: ['margin'],
+    })).process('.rule { margin: 1px 2px; }').css
+
+    expect(processed).toBe('.rule { margin: 2rem 4rem; }')
+  })
+
+  it('rejects custom unitRegex values without numeric and unit captures', () => {
+    expect(() => unitConverter({
+      rules: [{ from: 'px', to: 'rem', factor: 2 }],
+      unitRegex: /\d+px/,
+    })).toThrow('unitRegex must provide numeric and unit capture groups')
+  })
+
+  it('supports custom units containing digits with complex matchers', () => {
+    const processed = postcss(unitConverter({
+      rules: [{
+        from: unit => unit === 'u2',
+        to: 'px',
+        factor: 2,
+      }],
+      propList: ['width'],
+    })).process('.rule { width: 3u2; }').css
+
+    expect(processed).toBe('.rule { width: 6px; }')
+  })
+
+  it('resolves each complex unit matcher once per stylesheet', () => {
+    let matcherCalls = 0
+    const processed = postcss(unitConverter({
+      rules: [
+        {
+          from: (unit) => {
+            matcherCalls += 1
+            return unit === 'foo'
+          },
+          to: 'px',
+          factor: 2,
+        },
+        {
+          from: 'bar',
+          to: 'px',
+          factor: 3,
+        },
+      ],
+      propList: ['*'],
+    })).process('.rule { a: 1foo; b: 2foo; c: 3bar; d: 4foo; }').css
+
+    expect(processed).toBe('.rule { a: 2px; b: 4px; c: 9px; d: 8px; }')
+    expect(matcherCalls).toBe(2)
+  })
+
+  it('preserves rule order when mixing string and complex matchers', () => {
+    const processed = postcss(unitConverter({
+      rules: [
+        { from: /^rem$/, to: 'px', factor: 2 },
+        { from: 'rem', to: 'px', factor: 3 },
+      ],
+      propList: ['width'],
+    })).process('.rule { width: 1rem; }').css
+
+    expect(processed).toBe('.rule { width: 2px; }')
   })
 
   it('supports keeping units for zero values', () => {
@@ -558,6 +643,33 @@ describe('postcss-rule-unit-converter', () => {
     })).process(input).css
 
     expect(processed).toBe(output)
+  })
+
+  it('keeps declarations unchanged for null and non-finite transform results', () => {
+    const input = '.rule { nullValue: 1foo; infinite: 1bar; overflow: 1baz; }'
+    const processed = postcss(unitConverter({
+      rules: [
+        { from: 'foo', to: 'px', transform: () => null as any },
+        { from: 'bar', to: 'px', transform: () => Number.POSITIVE_INFINITY },
+        { from: 'baz', to: 'px', factor: Number.POSITIVE_INFINITY },
+      ],
+      propList: ['*'],
+    })).process(input).css
+
+    expect(processed).toBe(input)
+  })
+
+  it('does not reprocess fallback declarations when replace is false', () => {
+    const processed = postcss(unitConverter({
+      rules: [
+        { from: 'rem', to: 'px', factor: 2 },
+        { from: 'px', to: 'rem', factor: 2 },
+      ],
+      replace: false,
+      propList: ['width'],
+    })).process('.rule { width: 1rem; }').css
+
+    expect(processed).toBe('.rule { width: 1rem; width: 2px; }')
   })
 
   it('ignores unsupported matcher types without breaking valid rules', () => {

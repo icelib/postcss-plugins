@@ -183,7 +183,7 @@ RN eject:
 - `mediaQuery`: `boolean`, convert px in `@media`
 - `minPixelValue`: `number`, values lower than this are not converted (Harmony still converts to `ch`)
 - `onePxTransform`: `boolean`, whether to convert `1px` (Harmony still converts `PX` to `ch`)
-- `exclude`: `(filePath?: string) => boolean`, skip the whole file when matched
+- `exclude`: `Array<string | RegExp> | (filePath?: string) => boolean`, skip the whole file when matched
 
 > Note: internally this plugin reuses utilities from `postcss-plugin-shared` for prop matching and unit regex building.
 

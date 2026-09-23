@@ -1,0 +1,17 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "build": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "../../packages/*/README*.md",
+        "../../packages/*/API*.md",
+        "../../packages/*/COOKBOOK*.md",
+        "../../packages/*/MIGRATION*.md",
+        "../../packages/*/PRESET_AUTHORING*.md",
+        "../../packages/*/package.json"
+      ]
+    }
+  }
+}

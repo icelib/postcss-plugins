@@ -162,6 +162,16 @@ describe('postcss-plugin-shared', () => {
       expect(output).toBe('a:var(--x,4PX);b:5PX;')
     })
 
+    it('skips units in nested var() fallbacks', () => {
+      const re = createUnitRegex({ units: ['px'] })
+      const input = 'a:var(--gap,calc(1px + 2px));b:3px;'
+      const output = input.replace(re, (match, value?: string) => {
+        return value ? `${value}PX` : match
+      })
+
+      expect(output).toBe('a:var(--gap,calc(1px + 2px));b:3PX;')
+    })
+
     it('createUnitRegex can opt out of quote/url skipping', () => {
       const re = createUnitRegex({
         units: ['px'],
@@ -186,6 +196,13 @@ describe('postcss-plugin-shared', () => {
       })
 
       expect(output).toBe('a:1PX;b:2PX;')
+    })
+
+    it('matches longer overlapping units before shorter units', () => {
+      const re = createUnitRegex({ units: ['p', 'px'] })
+      const output = 'a:1px;b:2p;'.replace(re, match => match.toUpperCase())
+
+      expect(output).toBe('a:1PX;b:2P;')
     })
   })
 
@@ -487,6 +504,31 @@ describe('postcss-plugin-shared', () => {
       })
 
       expect(root.toString()).toBe('.rule{width:1rem;width:2px}')
+    })
+
+    it('does not reprocess generated fallbacks', () => {
+      const root = postcss.parse('.rule{width:1rem}')
+      walkAndReplaceValues({
+        root,
+        unitRegex,
+        propList: ['*'],
+        replace: false,
+        createReplacer: () => (_m, value) => `${Number(value) * 2}rem`,
+      })
+
+      expect(root.toString()).toBe('.rule{width:1rem;width:2rem}')
+    })
+
+    it('normalizes non-global regexes and visits every match', () => {
+      const root = postcss.parse('.rule{width:1rem 2rem}')
+      walkAndReplaceValues({
+        root,
+        unitRegex: /(\d+)(rem)/,
+        propList: ['*'],
+        createReplacer: () => (_m, value) => `${Number(value) * 2}px`,
+      })
+
+      expect(root.toString()).toBe('.rule{width:2px 4px}')
     })
 
     it('skips when replacer does not change the value', () => {

@@ -28,17 +28,17 @@ const allPropsProcessor = postcss(unitsToPx({
 }))
 
 describe('postcss-units-to-px benchmark', () => {
-  it('units-to-px benchmarks', ({ bench }) => {
-    bench('default rules medium stylesheet', () => {
+  it('units-to-px benchmarks', async ({ bench }) => {
+    await bench('default rules medium stylesheet', { writeResult: 'benchmarks/.vitest/default-rules-medium.json' }, () => {
       void defaultProcessor.process(mediumCss, { from: 'bench-medium.css' }).css
-    })
+    }).run()
 
-    bench('default rules large stylesheet', () => {
+    await bench('default rules large stylesheet', { writeResult: 'benchmarks/.vitest/default-rules-large.json' }, () => {
       void defaultProcessor.process(largeCss, { from: 'bench-large.css' }).css
-    })
+    }).run()
 
-    bench('propList=* with media queries', () => {
+    await bench('propList=* with media queries', { writeResult: 'benchmarks/.vitest/prop-list-with-media-queries.json' }, () => {
       void allPropsProcessor.process(`@media (min-width: 10rem) { ${mediumCss} }`, { from: 'bench-media.css' }).css
-    })
+    }).run()
   })
 })

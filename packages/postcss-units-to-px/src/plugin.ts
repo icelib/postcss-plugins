@@ -1,7 +1,7 @@
 import type {
   ConversionRule,
   RuleContext,
-} from '../../postcss-rule-unit-converter/src/types'
+} from 'postcss-rule-unit-converter'
 import type {
   PostcssUnitsToPx,
   TransformContext,
@@ -10,7 +10,7 @@ import type {
   UnitRule,
   UserDefinedOptions,
 } from './types'
-import unitConverter from '../../postcss-rule-unit-converter/src/index'
+import unitConverter from 'postcss-rule-unit-converter'
 import { defaultUnitMap } from './defaults'
 import { getConfig, postcssPlugin } from './shared'
 

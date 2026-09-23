@@ -7,6 +7,9 @@
     "not_found_handling": "404-page",
     "html_handling": "auto-trailing-slash"
   },
+  "cache": {
+    "enabled": true
+  },
   "routes": [
     {
       "pattern": "postcss.icebreaker.top",

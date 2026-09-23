@@ -183,7 +183,7 @@ RN eject：
 - `mediaQuery`: `boolean`，是否转换 `@media` 中的 px
 - `minPixelValue`: `number`，小于该值时不转换（Harmony 仍会转 `ch`）
 - `onePxTransform`: `boolean`，是否转换 1px（Harmony 下 `PX` 仍转 `ch`）
-- `exclude`: `(filePath?: string) => boolean`，命中直接跳过整文件
+- `exclude`：`Array<string | RegExp> | (filePath?: string) => boolean`，命中直接跳过整文件
 
 > 说明：插件内部复用了 `postcss-plugin-shared` 的通用能力（propList 匹配、单位正则构建等）。
 

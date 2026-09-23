@@ -82,6 +82,14 @@ describe('value parsing', () => {
     expect(processed).toBe(expected)
   })
 
+  it('should not replace values in var() fallbacks', () => {
+    const options = { platform: 'h5', designWidth: 640, propList: ['*'] } as const
+    const rules = '.rule { margin: var(--gap, calc(16px + 8px)); font-size: 16px; }'
+    const expected = '.rule { margin: var(--gap, calc(16px + 8px)); font-size: 0.468rem; }'
+    const processed = transform(rules, options)
+    expect(processed).toBe(expected)
+  })
+
   it('should not replace values with an uppercase P or X', () => {
     const options = { platform: 'h5', designWidth: 640, propList: ['*'] } as const
     const rules = '.rule { margin: 12px calc(100% - 14PX); height: calc(100% - 20px); font-size: 12Px; line-height: 16px; }'

@@ -197,6 +197,9 @@ importers:
       vitepress:
         specifier: 1.6.4
         version: 1.6.4(@algolia/client-search@5.59.0)(@types/node@26.6.2)(change-case@5.4.4)(jiti@2.7.0)(lightningcss@1.33.0)(postcss@8.5.28)(search-insights@2.17.3)(tsx@4.23.15)(typescript@6.0.3)(yaml@2.9.1)
+      vue:
+        specifier: 3.5.43
+        version: 3.5.43(typescript@6.0.3)
 
   packages/postcss-plugin-shared:
     dependencies:
@@ -215,6 +218,9 @@ importers:
       postcss-plugin-shared:
         specifier: workspace:*
         version: link:../postcss-plugin-shared
+      postcss-rule-unit-converter:
+        specifier: workspace:*
+        version: link:../postcss-rule-unit-converter
 
   packages/postcss-rem-to-responsive-pixel:
     dependencies:
@@ -224,6 +230,9 @@ importers:
       postcss-plugin-shared:
         specifier: workspace:*
         version: link:../postcss-plugin-shared
+      postcss-rule-unit-converter:
+        specifier: workspace:*
+        version: link:../postcss-rule-unit-converter
 
   packages/postcss-rem-to-viewport:
     dependencies:
@@ -233,6 +242,9 @@ importers:
       postcss-plugin-shared:
         specifier: workspace:*
         version: link:../postcss-plugin-shared
+      postcss-rule-unit-converter:
+        specifier: workspace:*
+        version: link:../postcss-rule-unit-converter
 
   packages/postcss-rule-unit-converter:
     dependencies:
@@ -251,6 +263,9 @@ importers:
       postcss-plugin-shared:
         specifier: workspace:*
         version: link:../postcss-plugin-shared
+      postcss-rule-unit-converter:
+        specifier: workspace:*
+        version: link:../postcss-rule-unit-converter
 
 packages:
 
@@ -10523,7 +10538,7 @@ snapshots:
 
   '@vue/compiler-core@3.5.43':
     dependencies:
-      '@babel/parser': 7.29.8
+      '@babel/parser': 7.29.9
       '@vue/shared': 3.5.43
       entities: 7.0.1
       estree-walker: 2.0.2

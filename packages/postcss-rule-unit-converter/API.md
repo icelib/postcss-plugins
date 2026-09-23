@@ -136,6 +136,9 @@ The default generated regex also contains skip alternatives for quoted strings,
 capture groups, so the replacer returns the original text unchanged. If you pass
 `unitRegex`, it replaces the generated regex entirely; include your own skip
 alternatives if you still want strings, URLs, or CSS variables to remain untouched.
+The expression must expose the numeric value as capture group 1 and the unit as
+capture group 2. A missing global flag is added automatically so every match in
+a declaration is visited.
 
 ## Helpers
 
