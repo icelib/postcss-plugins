@@ -17,7 +17,7 @@ Each package has its own README with usage and configuration details.
 
 ## Requirements
 
-- Node.js >= 22.13.0
+- Node.js >= 22.22.1
 - pnpm (workspace managed)
 
 ## Development
