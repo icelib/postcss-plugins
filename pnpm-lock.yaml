@@ -213,7 +213,7 @@ importers:
         specifier: 8.5.28
         version: 8.5.28
       postcss-plugin-shared:
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../postcss-plugin-shared
 
   packages/postcss-rem-to-responsive-pixel:
@@ -222,7 +222,7 @@ importers:
         specifier: 8.5.28
         version: 8.5.28
       postcss-plugin-shared:
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../postcss-plugin-shared
 
   packages/postcss-rem-to-viewport:
@@ -231,7 +231,7 @@ importers:
         specifier: 8.5.28
         version: 8.5.28
       postcss-plugin-shared:
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../postcss-plugin-shared
 
   packages/postcss-rule-unit-converter:
@@ -240,7 +240,7 @@ importers:
         specifier: 8.5.28
         version: 8.5.28
       postcss-plugin-shared:
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../postcss-plugin-shared
 
   packages/postcss-units-to-px:
@@ -249,7 +249,7 @@ importers:
         specifier: 8.5.28
         version: 8.5.28
       postcss-plugin-shared:
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../postcss-plugin-shared
 
 packages:

@@ -71,7 +71,7 @@
     "postcss": "^8"
   },
   "dependencies": {
-    "postcss-plugin-shared": "workspace:^"
+    "postcss-plugin-shared": "workspace:*"
   },
   "publishConfig": {
     "access": "public",
