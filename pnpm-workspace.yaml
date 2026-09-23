@@ -19,3 +19,18 @@ allowBuilds:
   sharp: true
   vue-demi: true
   workerd: true
+overrides:
+  prettier: 3.9.7
+  typescript: 6.0.3
+  vite: 8.3.0
+  # VitePress 1.6.4 is incompatible with repoctl's Vite 8 runtime; keep its nested runtime on Vite 7.
+  vitepress@1.6.4>vite: 7.3.5
+  postcss: 8.5.28
+  postcss-selector-parser: 7.1.6
+  js-yaml: 5.4.2
+  nanoid: 6.0.1
+  brace-expansion: 5.0.12
+  cross-spawn: 7.0.6
+  adm-zip: 0.6.1
+  uuid: 14.0.2
+  esbuild: 0.28.2

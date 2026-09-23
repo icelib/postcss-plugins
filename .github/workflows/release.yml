@@ -21,6 +21,7 @@ on:
           - prepare
           - publish
           - publish-unpublished
+          - reconcile
       package:
         description: Package used for unpublished-version recovery
         required: false
@@ -29,6 +30,11 @@ on:
         description: Version used for unpublished-version recovery
         required: false
         type: string
+      dry-run:
+        description: Preview release reconciliation without changes
+        required: false
+        default: false
+        type: boolean
 
 env:
   HUSKY: 0
@@ -54,7 +60,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
 
       - name: Setup Node.js environment
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -72,4 +78,5 @@ jobs:
           REPO_RELEASE_MODE: ${{ inputs.mode || 'auto' }}
           REPO_RELEASE_PACKAGE: ${{ inputs.package }}
           REPO_RELEASE_VERSION: ${{ inputs.version }}
+          REPO_RELEASE_DRY_RUN: ${{ inputs.dry-run }}
         run: pnpm exec repo release ci

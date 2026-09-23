@@ -1,0 +1,3 @@
+.generated
+.vitepress/dist
+.vitepress/cache

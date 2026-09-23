@@ -1,5 +1,5 @@
 import postcss from 'postcss'
-import { bench, describe } from 'vitest'
+import { describe, it } from 'vitest'
 
 import unitsToPx from '../src/index'
 
@@ -28,15 +28,17 @@ const allPropsProcessor = postcss(unitsToPx({
 }))
 
 describe('postcss-units-to-px benchmark', () => {
-  bench('default rules medium stylesheet', () => {
-    void defaultProcessor.process(mediumCss, { from: 'bench-medium.css' }).css
-  })
+  it('units-to-px benchmarks', ({ bench }) => {
+    bench('default rules medium stylesheet', () => {
+      void defaultProcessor.process(mediumCss, { from: 'bench-medium.css' }).css
+    })
 
-  bench('default rules large stylesheet', () => {
-    void defaultProcessor.process(largeCss, { from: 'bench-large.css' }).css
-  })
+    bench('default rules large stylesheet', () => {
+      void defaultProcessor.process(largeCss, { from: 'bench-large.css' }).css
+    })
 
-  bench('propList=* with media queries', () => {
-    void allPropsProcessor.process(`@media (min-width: 10rem) { ${mediumCss} }`, { from: 'bench-media.css' }).css
+    bench('propList=* with media queries', () => {
+      void allPropsProcessor.process(`@media (min-width: 10rem) { ${mediumCss} }`, { from: 'bench-media.css' }).css
+    })
   })
 })

@@ -1,5 +1,5 @@
 import postcss from 'postcss'
-import { bench, describe } from 'vitest'
+import { describe, it } from 'vitest'
 
 import pxtrans, { createDirectivePlugin } from '../src/index'
 
@@ -33,15 +33,17 @@ const h5Processor = postcss(pxtrans({
 const directiveProcessor = postcss(createDirectivePlugin({ platform: 'weapp' }))
 
 describe('postcss-pxtrans benchmarks', () => {
-  bench('pxtrans transform', () => {
-    void pxtransProcessor.process(baseCss, { from: 'bench.css' }).css
-  })
+  it('pxtrans benchmarks', ({ bench }) => {
+    bench('pxtrans transform', () => {
+      void pxtransProcessor.process(baseCss, { from: 'bench.css' }).css
+    })
 
-  bench('pxtrans h5 transform', () => {
-    void h5Processor.process(baseCss, { from: 'bench-h5.css' }).css
-  })
+    bench('pxtrans h5 transform', () => {
+      void h5Processor.process(baseCss, { from: 'bench-h5.css' }).css
+    })
 
-  bench('pxtrans directives', () => {
-    void directiveProcessor.process(directiveCss, { from: 'bench.css' }).css
+    bench('pxtrans directives', () => {
+      void directiveProcessor.process(directiveCss, { from: 'bench.css' }).css
+    })
   })
 })

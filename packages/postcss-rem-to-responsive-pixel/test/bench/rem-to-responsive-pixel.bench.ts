@@ -1,5 +1,5 @@
 import postcss from 'postcss'
-import { bench, describe } from 'vitest'
+import { describe, it } from 'vitest'
 import remToPx from '../../src/index'
 
 const sampleCss = `
@@ -18,15 +18,17 @@ const mediaProcessor = postcss(remToPx({ propList: ['*'], mediaQuery: true }))
 const rpxProcessor = postcss(remToPx({ propList: ['*'], transformUnit: 'rpx' }))
 
 describe('rem-to-responsive-pixel bench', () => {
-  bench('default transform (propList=*)', () => {
-    void defaultProcessor.process(sampleCss, { from: 'bench.css' }).css
-  })
+  it('rem-to-responsive-pixel benchmarks', ({ bench }) => {
+    bench('default transform (propList=*)', () => {
+      void defaultProcessor.process(sampleCss, { from: 'bench.css' }).css
+    })
 
-  bench('media queries enabled', () => {
-    void mediaProcessor.process(sampleCss, { from: 'bench.css' }).css
-  })
+    bench('media queries enabled', () => {
+      void mediaProcessor.process(sampleCss, { from: 'bench.css' }).css
+    })
 
-  bench('rpx transform large stylesheet', () => {
-    void rpxProcessor.process(largerCss, { from: 'bench-rpx.css' }).css
+    bench('rpx transform large stylesheet', () => {
+      void rpxProcessor.process(largerCss, { from: 'bench-rpx.css' }).css
+    })
   })
 })

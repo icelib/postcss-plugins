@@ -1,0 +1,16 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "postcss-docs",
+  "compatibility_date": "2026-09-23",
+  "assets": {
+    "directory": "./apps/website/.vitepress/dist",
+    "not_found_handling": "404-page",
+    "html_handling": "auto-trailing-slash"
+  },
+  "routes": [
+    {
+      "pattern": "postcss.icebreaker.top",
+      "custom_domain": true
+    }
+  ]
+}

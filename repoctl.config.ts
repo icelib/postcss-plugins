@@ -3,7 +3,7 @@ import type { MonorepoConfig } from 'repoctl'
 export default {
   commands: {
     create: {
-      defaultTemplate: 'unbuild',
+      defaultTemplate: 'tsdown',
       renameJson: false,
     },
     clean: {

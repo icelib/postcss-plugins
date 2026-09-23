@@ -1,5 +1,5 @@
 import postcss from 'postcss'
-import { bench, describe } from 'vitest'
+import { describe, it } from 'vitest'
 import {
   blacklistedSelector,
   createExcludeMatcher,
@@ -37,37 +37,39 @@ const overrides = {
 }
 
 describe('postcss-plugin-shared benchmarks', () => {
-  bench('toFixed', () => {
-    toFixed(12.3456, 3)
-  })
+  it('shared utility benchmarks', ({ bench }) => {
+    bench('toFixed', () => {
+      toFixed(12.3456, 3)
+    })
 
-  bench('mergeOptions', () => {
-    mergeOptions(overrides, defaults)
-  })
+    bench('mergeOptions', () => {
+      mergeOptions(overrides, defaults)
+    })
 
-  bench('declarationExists', () => {
-    declarationExists(decls, 'font-size', '1rem')
-  })
+    bench('declarationExists', () => {
+      declarationExists(decls, 'font-size', '1rem')
+    })
 
-  bench('remRegex replace', () => {
-    remRegex.lastIndex = 0
-    void remValue.replace(remRegex, '$1px')
-  })
+    bench('remRegex replace', () => {
+      remRegex.lastIndex = 0
+      void remValue.replace(remRegex, '$1px')
+    })
 
-  bench('pxRegex replace', () => {
-    pxRegex.lastIndex = 0
-    void pxValue.replace(pxRegex, '$1rem')
-  })
+    bench('pxRegex replace', () => {
+      pxRegex.lastIndex = 0
+      void pxValue.replace(pxRegex, '$1rem')
+    })
 
-  bench('blacklistedSelector', () => {
-    blacklistedSelector(blacklist, sampleSelector)
-  })
+    bench('blacklistedSelector', () => {
+      blacklistedSelector(blacklist, sampleSelector)
+    })
 
-  bench('createPropListMatcher', () => {
-    propMatcher('padding-left')
-  })
+    bench('createPropListMatcher', () => {
+      propMatcher('padding-left')
+    })
 
-  bench('createExcludeMatcher', () => {
-    excludeMatcher('/project/node_modules/pkg/index.css')
+    bench('createExcludeMatcher', () => {
+      excludeMatcher('/project/node_modules/pkg/index.css')
+    })
   })
 })

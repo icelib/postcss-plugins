@@ -8,6 +8,9 @@
       "inputs": [
         "src/**",
         "lib/**",
+        "scripts/**",
+        "public/**",
+        ".vitepress/**",
         "package.json",
         "tsconfig*.json",
         "*.config.{js,ts,mjs,mts}"

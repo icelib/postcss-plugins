@@ -2,6 +2,8 @@
 
 A PostCSS plugin monorepo focused on unit conversion and responsive styling utilities. This repo hosts multiple plugins plus shared utilities used across them.
 
+Read the full bilingual documentation at [postcss.icebreaker.top](https://postcss.icebreaker.top/).
+
 ## Packages
 
 - [postcss-plugin-shared](packages/postcss-plugin-shared) - Shared utilities for option merging, prop matching, regex helpers, and more.
@@ -15,7 +17,7 @@ Each package has its own README with usage and configuration details.
 
 ## Requirements
 
-- Node.js >= 22.12.0
+- Node.js >= 22.13.0
 - pnpm (workspace managed)
 
 ## Development
@@ -23,6 +25,14 @@ Each package has its own README with usage and configuration details.
 ```bash
 pnpm install
 pnpm dev
+```
+
+Documentation site commands:
+
+```bash
+pnpm docs:dev
+pnpm docs:build
+pnpm docs:preview
 ```
 
 Useful scripts:

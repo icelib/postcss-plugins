@@ -1,5 +1,5 @@
 import postcss from 'postcss'
-import { bench, describe } from 'vitest'
+import { describe, it } from 'vitest'
 
 import unitConverter, { composeRules, presets } from '../src/index'
 
@@ -36,15 +36,17 @@ const groupedProcessor = postcss(unitConverter({
 }))
 
 describe('postcss-rule-unit-converter benchmark', () => {
-  bench('mixed rules medium stylesheet', () => {
-    void processor.process(mediumCss, { from: 'bench-medium.css' }).css
-  })
+  it('rule converter benchmarks', ({ bench }) => {
+    bench('mixed rules medium stylesheet', () => {
+      void processor.process(mediumCss, { from: 'bench-medium.css' }).css
+    })
 
-  bench('mixed rules large stylesheet', () => {
-    void processor.process(largeCss, { from: 'bench-large.css' }).css
-  })
+    bench('mixed rules large stylesheet', () => {
+      void processor.process(largeCss, { from: 'bench-large.css' }).css
+    })
 
-  bench('preset group medium stylesheet', () => {
-    void groupedProcessor.process(mediumCss, { from: 'bench-group.css' }).css
+    bench('preset group medium stylesheet', () => {
+      void groupedProcessor.process(mediumCss, { from: 'bench-group.css' }).css
+    })
   })
 })

@@ -1,0 +1,16 @@
+{
+  "name": "@postcss-plugins/website",
+  "type": "module",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Bilingual documentation site for postcss-plugins.",
+  "scripts": {
+    "dev": "node scripts/sync-docs.mjs && vitepress dev",
+    "build": "node scripts/sync-docs.mjs && vitepress build",
+    "lint": "eslint .",
+    "preview": "vitepress preview"
+  },
+  "devDependencies": {
+    "vitepress": "1.6.4"
+  }
+}

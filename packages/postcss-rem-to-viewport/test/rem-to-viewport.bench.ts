@@ -1,5 +1,5 @@
 import postcss from 'postcss'
-import { bench, describe } from 'vitest'
+import { describe, it } from 'vitest'
 
 import remToVw from '../src/index'
 
@@ -24,19 +24,21 @@ const mediumCSS = makeRules(200)
 const largeCSS = makeRules(2000)
 
 describe('postcss-rem-to-viewport benchmark', () => {
-  bench('small stylesheet', async () => {
-    await processor.process(smallCSS, { from: 'small.css' })
-  })
+  it('rem-to-viewport benchmarks', ({ bench }) => {
+    bench('small stylesheet', async () => {
+      await processor.process(smallCSS, { from: 'small.css' })
+    })
 
-  bench('medium stylesheet', async () => {
-    await processor.process(mediumCSS, { from: 'medium.css' })
-  })
+    bench('medium stylesheet', async () => {
+      await processor.process(mediumCSS, { from: 'medium.css' })
+    })
 
-  bench('large stylesheet', async () => {
-    await processor.process(largeCSS, { from: 'large.css' })
-  })
+    bench('large stylesheet', async () => {
+      await processor.process(largeCSS, { from: 'large.css' })
+    })
 
-  bench('medium stylesheet with media queries', async () => {
-    await mediaProcessor.process(`@media (min-width: 20rem) { ${mediumCSS} }`, { from: 'media.css' })
+    bench('medium stylesheet with media queries', async () => {
+      await mediaProcessor.process(`@media (min-width: 20rem) { ${mediumCSS} }`, { from: 'media.css' })
+    })
   })
 })
