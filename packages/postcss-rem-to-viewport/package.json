@@ -1,7 +1,7 @@
 {
   "name": "postcss-rem-to-viewport",
   "type": "module",
-  "version": "2.0.5",
+  "version": "2.0.6",
   "description": "Convert rem units to viewport units using PostCSS.",
   "author": "ice breaker <1324318532@qq.com>",
   "license": "MIT",
@@ -69,8 +69,12 @@
     "compilerOptions": {
       "module": "NodeNext",
       "paths": {
-        "postcss-plugin-shared": ["../postcss-plugin-shared/dist/index.d.mts"],
-        "postcss-rule-unit-converter": ["../postcss-rule-unit-converter/dist/index.d.mts"]
+        "postcss-plugin-shared": [
+          "../postcss-plugin-shared/dist/index.d.mts"
+        ],
+        "postcss-rule-unit-converter": [
+          "../postcss-rule-unit-converter/dist/index.d.mts"
+        ]
       }
     }
   }

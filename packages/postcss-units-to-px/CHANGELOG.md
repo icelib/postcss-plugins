@@ -1,5 +1,15 @@
 # postcss-units-to-px
 
+## 0.2.4
+
+### Patch Changes
+
+- Harden unit conversion edge cases, prevent `replace: false` fallback re-entry, improve large stylesheet performance, and expand release and type validation coverage.
+
+- Updated dependencies:
+  - postcss-plugin-shared@1.1.6
+  - postcss-rule-unit-converter@0.2.4
+
 ## 0.2.3
 
 ### Patch Changes

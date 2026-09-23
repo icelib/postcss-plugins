@@ -1,7 +1,7 @@
 {
   "name": "postcss-plugin-shared",
   "type": "module",
-  "version": "1.1.5",
+  "version": "1.1.6",
   "description": "Shared utilities for postcss-plugins monorepo packages.",
   "author": "ice breaker <1324318532@qq.com>",
   "license": "MIT",

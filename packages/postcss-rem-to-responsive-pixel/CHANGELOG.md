@@ -1,5 +1,15 @@
 # postcss-rem-to-responsive-pixel
 
+## 7.0.6
+
+### Patch Changes
+
+- Harden unit conversion edge cases, prevent `replace: false` fallback re-entry, improve large stylesheet performance, and expand release and type validation coverage.
+
+- Updated dependencies:
+  - postcss-plugin-shared@1.1.6
+  - postcss-rule-unit-converter@0.2.4
+
 ## 7.0.5
 
 ### Patch Changes

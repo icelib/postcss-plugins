@@ -1,0 +1,24 @@
+postcss-plugin-shared@1.1.6:
+  dir: packages/postcss-plugin-shared
+  intents:
+    - stable-plugin-conversions
+postcss-pxtrans@1.0.5:
+  dir: packages/postcss-pxtrans
+  intents:
+    - stable-plugin-conversions
+postcss-rem-to-responsive-pixel@7.0.6:
+  dir: packages/postcss-rem-to-responsive-pixel
+  intents:
+    - stable-plugin-conversions
+postcss-rem-to-viewport@2.0.6:
+  dir: packages/postcss-rem-to-viewport
+  intents:
+    - stable-plugin-conversions
+postcss-rule-unit-converter@0.2.4:
+  dir: packages/postcss-rule-unit-converter
+  intents:
+    - stable-plugin-conversions
+postcss-units-to-px@0.2.4:
+  dir: packages/postcss-units-to-px
+  intents:
+    - stable-plugin-conversions
