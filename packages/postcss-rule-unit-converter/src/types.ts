@@ -81,7 +81,8 @@ export interface ConversionRule {
 }
 
 export type RuleGroup = ConversionRule | readonly ConversionRule[]
-export type PresetOptions = Record<string, unknown> | undefined
+/** Preset option objects do not require a string index signature. */
+export type PresetOptions = object | undefined
 export type PresetFactory<TOptions extends PresetOptions = undefined> = (
   options?: TOptions,
 ) => ConversionRule

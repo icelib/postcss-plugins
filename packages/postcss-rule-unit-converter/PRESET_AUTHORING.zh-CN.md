@@ -22,6 +22,10 @@
 
 ## 编写单条 Preset
 
+Preset options 可以使用命名 interface 或普通对象类型，无需添加索引签名。
+`PresetFactory`、`PresetGroupFactory`、`definePreset` 和 `definePresetGroup`
+统一接受 `object | undefined`，不接受 `number` 等原始类型。
+
 ```ts
 import type { PresetFactory } from 'postcss-rule-unit-converter'
 import { definePreset } from 'postcss-rule-unit-converter'

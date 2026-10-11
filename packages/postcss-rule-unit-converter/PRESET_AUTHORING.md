@@ -22,6 +22,11 @@ Use a preset group when:
 
 ## Authoring A Single Preset
 
+Preset options can use named interfaces or object types without an index
+signature. `PresetFactory`, `PresetGroupFactory`, `definePreset`, and
+`definePresetGroup` share the `object | undefined` constraint; primitive option
+types such as `number` are rejected.
+
 ```ts
 import type { PresetFactory } from 'postcss-rule-unit-converter'
 import { definePreset } from 'postcss-rule-unit-converter'

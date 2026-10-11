@@ -2,8 +2,14 @@ import { expectError, expectType } from 'tsd'
 import type { PluginCreator } from 'postcss'
 import plugin, {
   composeRules,
+  definePreset,
+  definePresetGroup,
   presets,
   type ConversionRule,
+  type PresetFactory,
+  type PresetGroupFactory,
+  type RemBasedPresetOptions,
+  type RpxPresetGroupOptions,
   type RuleContext,
   type UnitTransform,
   type UserDefinedOptions,
@@ -32,3 +38,41 @@ plugin({
   mediaQuery: true,
   exclude: path => path.includes('vendor'),
 })
+
+const remFactory: PresetFactory<RemBasedPresetOptions> = definePreset<RemBasedPresetOptions>(
+  (options = {}) => presets.remToPx(options),
+)
+expectType<ConversionRule>(remFactory({ rootValue: 20 }))
+expectError(remFactory({ rootValue: '20' }))
+
+const rpxFactory: PresetGroupFactory<RpxPresetGroupOptions> = definePresetGroup<RpxPresetGroupOptions>(
+  (options = {}) => presets.rpxPresetGroup(options),
+)
+expectType<ConversionRule[]>(rpxFactory({ ratio: 2, viewportWidth: 375 }))
+expectError(rpxFactory({ ratio: '2' }))
+
+interface CustomPresetOptions {
+  factor?: number
+  unit?: string
+}
+const customFactory = definePreset((options: CustomPresetOptions = {}) => ({
+  from: options.unit ?? 'foo',
+  to: 'px',
+  factor: options.factor ?? 2,
+}))
+expectType<PresetFactory<CustomPresetOptions>>(customFactory)
+expectType<ConversionRule>(customFactory({ factor: 4 }))
+const customGroup = definePresetGroup((options: CustomPresetOptions = {}) => [customFactory(options)])
+expectType<PresetGroupFactory<CustomPresetOptions>>(customGroup)
+expectType<ConversionRule[]>(customGroup({ unit: 'bar' }))
+expectError(customFactory({ factor: '4' }))
+expectError(customGroup(4))
+
+const literalFactory = definePreset<{ factor?: number }>((options = {}) => ({ from: 'foo', to: 'px', factor: options.factor ?? 2 }))
+expectType<ConversionRule>(literalFactory({ factor: 3 }))
+const noOptions = definePreset(() => presets.remToPx())
+expectType<PresetFactory<undefined>>(noOptions)
+expectType<ConversionRule>(noOptions())
+expectError(noOptions(2))
+expectError(definePreset<number>(() => presets.remToPx()))
+expectError(definePresetGroup<number>(() => [presets.remToPx()]))

@@ -4,6 +4,7 @@ import type {
   NumericResolver,
   PresetFactory,
   PresetGroupFactory,
+  PresetOptions,
   RuleContext,
   UnitMap,
   UnitMatcher,
@@ -212,7 +213,7 @@ function createUnitTransformRule(
 /**
  * Helper for authoring a typed single-rule preset.
  */
-export function definePreset<TOptions extends Record<string, unknown> | undefined = undefined>(
+export function definePreset<TOptions extends PresetOptions = undefined>(
   factory: PresetFactory<TOptions>,
 ) {
   return factory
@@ -221,7 +222,7 @@ export function definePreset<TOptions extends Record<string, unknown> | undefine
 /**
  * Helper for authoring a typed grouped preset.
  */
-export function definePresetGroup<TOptions extends Record<string, unknown> | undefined = undefined>(
+export function definePresetGroup<TOptions extends PresetOptions = undefined>(
   factory: PresetGroupFactory<TOptions>,
 ) {
   return factory
