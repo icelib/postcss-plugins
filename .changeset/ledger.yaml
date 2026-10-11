@@ -6,6 +6,10 @@ postcss-plugin-shared@1.1.7:
   dir: packages/postcss-plugin-shared
   intents:
     - sour-poets-kiss
+postcss-plugin-shared@1.2.0:
+  dir: packages/postcss-plugin-shared
+  intents:
+    - fluffy-bears-serve
 postcss-pxtrans@1.0.5:
   dir: packages/postcss-pxtrans
   intents:
@@ -22,6 +26,10 @@ postcss-rule-unit-converter@0.2.4:
   dir: packages/postcss-rule-unit-converter
   intents:
     - stable-plugin-conversions
+postcss-rule-unit-converter@0.2.6:
+  dir: packages/postcss-rule-unit-converter
+  intents:
+    - mean-snakes-tease
 postcss-units-to-px@0.2.4:
   dir: packages/postcss-units-to-px
   intents:

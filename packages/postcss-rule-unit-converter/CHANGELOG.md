@@ -1,5 +1,14 @@
 # postcss-rule-unit-converter
 
+## 0.2.6
+
+### Patch Changes
+
+- Parse complete CSS unit tokens safely, preserve signed and scientific values, and consistently skip var() contents.
+
+- Updated dependencies:
+  - postcss-plugin-shared@1.2.0
+
 ## 0.2.5
 
 ### Patch Changes
