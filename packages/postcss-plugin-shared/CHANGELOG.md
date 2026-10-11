@@ -1,5 +1,11 @@
 # postcss-plugin-shared
 
+## 1.2.0
+
+### Minor Changes
+
+- Add whole-value transforms to the shared walker and preserve important fallback declarations.
+
 ## 1.1.7
 
 ### Patch Changes
