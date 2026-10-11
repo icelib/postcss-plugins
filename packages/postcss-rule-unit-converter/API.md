@@ -35,16 +35,16 @@ interface UserDefinedOptions {
 ```
 
 - `rules`: ordered conversion rules. First match wins.
-- `unitRegex`: override the generated matching regex.
+- `unitRegex`: opt out of default CSS tokenization and use a custom regex instead.
 - `unitPrecision`: decimal precision for generated values.
-- `minValue`: global minimum source value to convert.
+- `minValue`: global minimum absolute source magnitude to convert (default `0`). Negative lengths remain eligible.
 - `keepZeroUnit`: keep `0px`/`0rem` style output instead of collapsing to bare `0`.
 - `selectorBlackList`: skip matching selectors.
 - `propList`: restrict processing to matching properties. Supports negated
   string entries like `!font-size`, `!padding*`, and `!--wot-*-font-size`.
-- `replace`: replace the original declaration instead of cloning a fallback declaration.
+- `replace`: replace the original declaration instead of cloning a fallback declaration (default `true`). Fallback deduplication compares property, value, and `!important`.
 - `mediaQuery`: also convert matching units in `@media` params.
-- `exclude`: skip files by path or predicate.
+- `exclude`: skip the entire root entry by path or predicate (default `[/node_modules/i]`). It does not filter imported declarations by their original file.
 - `disabled`: no-op mode.
 
 ### Choosing Between `exclude`, `selectorBlackList`, and `propList`
@@ -53,7 +53,7 @@ interface UserDefinedOptions {
 - `selectorBlackList`: skip matching selectors inside an otherwise processed file
 - `propList`: skip or include specific CSS properties inside matched selectors
 
-Use `exclude` for file-level boundaries such as `node_modules` or generated CSS.
+Use `exclude` for root-entry boundaries such as `node_modules` or generated CSS.
 Use `selectorBlackList` when a rule or component should be left untouched. Use
 `propList` when the file and selector should still be processed, but some
 properties such as `font-size` or `--wot-*-font-size` should be skipped.
@@ -75,16 +75,20 @@ interface ConversionRule {
 - `from`: source unit matcher.
 - `to`: fallback output unit.
 - `factor`: shorthand numeric conversion.
-- `minValue`: per-rule minimum source value override.
+- `minValue`: per-rule minimum absolute source magnitude, overriding the global threshold.
 - `transform`: full callback when `factor` is not enough.
 
-Rules are evaluated in array order. If multiple rules can match the same source unit, the first matching rule is used.
+Rules are evaluated in array order. The first matching rule is final, including
+when its `transform` returns `undefined` or its `minValue` threshold is not met.
+Later rules do not retry that token. Each original token is converted once; a
+`rem -> px` rule followed by a `px -> rpx` rule does not chain in one run. A second
+processing run may convert the generated `px`, so configure one stage when a
+single conversion is intended.
 
-String unit matchers are trimmed and normalized to lowercase. With the default
-generated regex, a string matcher such as `'px'` matches lowercase `px` in CSS.
-Use a `RegExp` matcher such as `/^px$/i`, or a custom `unitRegex` that captures
-uppercase units, when you need `PX`/`Px` style matches. `rawUnit` still exposes
-the original casing.
+String unit matchers are trimmed and normalized to lowercase. Default tokenization
+decodes CSS unit escapes and normalizes unit case, so `'px'` also matches `PX`,
+`Px`, and equivalent escaped spellings. Regex and function matchers receive that
+normalized unit. `rawUnit` retains the original source text.
 
 ## Transform Callback
 
@@ -102,7 +106,10 @@ interface ConvertedValue {
 
 - Return `number` to reuse `to` as the output unit.
 - Return `{ value, unit }` to override the output unit.
-- Return `undefined` to leave the original match unchanged.
+- Return `undefined` to leave the original match unchanged, without trying later rules.
+
+`value` is signed and supports scientific notation: `-2rem` passes `-2`, and
+`1e3rem` passes `1000`. `minValue` compares `Math.abs(value)` before the callback.
 
 ## RuleContext
 
@@ -125,20 +132,33 @@ interface RuleContext {
 }
 ```
 
-- `fromUnit`: source unit used for rule matching. It is normalized to lowercase
-  when the plugin uses a custom or broad unit regex.
-- `rawUnit`: original matched unit text, preserving source casing such as `PX`.
-- `rawValue`: original matched numeric text before `Number(...)`, such as `.5`.
-- `match`: full matched fragment, such as `.5PX`.
+- `fromUnit`: lowercase source unit used for rule matching; default tokenization also decodes CSS escapes.
+- `rawUnit`: original unit text, preserving casing such as `PX` and CSS escapes.
+- `rawValue`: original signed numeric text before `Number(...)`, such as `-.5` or `1e3`.
+- `match`: full matched fragment, such as `-.5PX`.
+- `input` and `filePath`: root-entry input and path, including when other CSS files have been imported. Inspect `decl?.source?.input.file` for a declaration's original file; `decl` is absent for media-query parameters.
 
-The default generated regex also contains skip alternatives for quoted strings,
-`url(...)`, and `var(...)`. Those alternatives do not provide numeric/unit
-capture groups, so the replacer returns the original text unchanged. If you pass
-`unitRegex`, it replaces the generated regex entirely; include your own skip
-alternatives if you still want strings, URLs, or CSS variables to remain untouched.
+Programmatic ASTs without root source metadata are supported. Their callback and
+filter context uses an ephemeral `Input` containing the original AST text and
+the explicit `process({ from })`, if supplied. This does not attach sources to
+nodes or invent a filename for source-less input.
+
+## Matching Boundaries
+
+Without `unitRegex`, a CSS tokenizer visits complete dimension and percentage
+tokens. A `rem` rule leaves `2remfoo` and `foo2rem` untouched. Signed values,
+scientific notation, unit case, and CSS escapes follow CSS token boundaries.
+Strings, comments, and URL contents remain untouched, including escaped quotes
+and uppercase `URL()`. The whole `var()` function is skipped at every nesting
+depth, including its fallback; lengths in other functions such as `calc()` and
+`min()` are processed normally.
+
+An explicit `unitRegex` replaces tokenization entirely, including those protections.
 The expression must expose the numeric value as capture group 1 and the unit as
 capture group 2. A missing global flag is added automatically so every match in
-a declaration is visited.
+a declaration is visited. Captured units are lowercased for rule matching; the
+custom regex is responsible for escapes, signed/scientific numbers, token
+boundaries, and any string, URL, or `var()` skip alternatives.
 
 ## Helpers
 

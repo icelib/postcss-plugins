@@ -52,7 +52,7 @@ pnpm add postcss-plugin-shared
 - `createAdvancedPropListMatcher`：支持高级 `propList` 语法的属性匹配器（string[]，通配符 + 取反）
 - `createExcludeMatcher`：根据 exclude 生成文件路径排除函数（数组或函数）
 - `createSelectorBlacklistMatcher`：选择器黑名单匹配器（支持缓存）
-- `declarationExists`：用于检测某 rule/decls 中是否已存在相同 `prop/value`，避免重复注入
+- `declarationExists`：用于检测某 rule/decls 中是否已存在相同 `prop/value`，可同时比较优先级，避免重复注入
 - `walkAndReplaceValues`：通用遍历替换逻辑（decl 值与 media params）
 
 ## API 说明
@@ -163,12 +163,39 @@ const re = createUnitRegex({ units: ['px', 'rpx'], ignoreCase: true })
 
 生成一个 `(filepath?: string) => boolean` 的排除函数。
 
-### `declarationExists(decls, prop, value)`
+### `declarationExists(decls, prop, value, important?)`
 
-用于避免在同一个规则中生成重复声明（常用于 `replace: false` 时 `cloneAfter` 的去重判断）。
+检查同一规则中是否已有相同属性和值（常用于 `replace: false` 时 `cloneAfter` 的去重判断）。省略 `important` 时匹配任意优先级，保持原有三参数行为；显式传入 `true` 或 `false` 时，严格匹配归一化后的 `!important` 标志。
 
 ### `walkAndReplaceValues(options)`
 
 默认 `replace: true` 会原位转换每条命中的声明，即使已存在相同属性和转换后值。声明顺序和 `!important` 保持不变；此函数不删除重复声明。
 
-`skipDuplicate` 默认为 `true`，仅控制 `replace: false` 时的插入行为：保留原声明，已有相同属性和值时不再插入。设置 `skipDuplicate: false` 后，即使已存在相同属性和值，仍插入转换后的声明。
+`skipDuplicate` 默认为 `true`，仅控制 `replace: false` 时的插入行为：保留原声明，已有相同属性、值和优先级时不再插入。普通声明不会阻止重要声明的 fallback，反之亦然。设置 `skipDuplicate: false` 后，即使存在相同组合，仍插入转换后的声明。
+
+可选择两种值转换策略：
+
+```ts
+interface WalkAndReplaceOptions {
+  // 为没有源码信息的手工 AST 提供可选上下文：
+  input?: Input
+  // 原有正则策略：
+  unitRegex?: RegExp
+  createReplacer?: (context: ReplaceContext) => (m: string, $1?: string) => string
+  // 整值转换策略；提供时优先使用：
+  createValueTransformer?: (context: ReplaceContext) => (value: string) => string
+  // 其他 walker 选项保持不变。
+}
+```
+
+`createValueTransformer` 完全绕过正则匹配及其预检查，接收每条符合条件的声明值；
+开启 `mediaQuery` 后，也接收媒体查询参数。两种策略共享过滤、上下文、原位替换、
+fallback 和去重逻辑。未提供整值转换器时，必须同时提供 `unitRegex` 和
+`createReplacer`；不完整的策略会抛出 `TypeError`。
+
+`context.input`、`context.filePath` 和 `exclude` 使用根 CSS 入口。转换器可通过
+`context.decl?.source?.input.file` 获取导入声明的原文件。
+
+手工创建的根节点没有 `root.source.input` 时，可传入 `input` 作为回调和排除
+规则的上下文；真实根输入始终优先。walker 不会将备用输入附加到任何 AST
+源码或创建 sourcemap 信息。两种输入都没有时，根节点保持原样。

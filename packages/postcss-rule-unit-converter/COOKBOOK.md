@@ -96,8 +96,10 @@ export default {
 ```
 
 This keeps the original declaration and appends the converted one after it.
+Existing fallbacks are compared by property, value, and `!important`, so a normal
+declaration does not suppress an important fallback.
 
-## Dynamic Root Value By File
+## Dynamic Root Value By Entry
 
 ```ts
 import unitConverter, { presets } from 'postcss-rule-unit-converter'
@@ -118,7 +120,24 @@ export default {
 Use when:
 
 - mobile and tablet styles share one build
-- different source files need different conversion baselines
+- different root entries need different conversion baselines
+
+The preset resolver receives the root-entry `Input`. After an importer expands
+several files, it does not switch input for each declaration. For per-source
+conversion, use a rule callback and inspect the declaration source:
+
+```ts
+unitConverter({
+  rules: [{
+    from: 'rem',
+    to: 'px',
+    transform(value, context) {
+      const source = context.decl?.source?.input.file ?? context.filePath
+      return value * (source?.includes('tablet') ? 18 : 16)
+    },
+  }],
+})
+```
 
 ## Custom Preset In App Config
 

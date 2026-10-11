@@ -19,8 +19,13 @@
 
 - 每条规则负责匹配一种源单位并生成一个新值。
 - 规则按顺序执行。
-- 如果多条规则都能命中同一个源单位，先写的那条优先。
+- 如果多条规则都能命中同一个源单位，先写的那条优先；即使它的 transform 返回 `undefined`，也不会继续尝试后面的规则。
+- 每轮只转换原始 token 一次，不把生成的单位交给后续规则连锁转换。再次运行插件时，仍可能转换上次的输出。
 - 需要组合多组 preset 和自定义规则时，用 `composeRules(...)` 明确最终顺序。
+
+## 运行环境
+
+需要 Node.js 20.19.0 或更高版本，以及 PostCSS 8。
 
 ## 用法
 
@@ -225,10 +230,31 @@ const result = await postcss([
 - 如果你要严格控制命中顺序，优先直接写显式规则数组。
 - 使用 `presets.viewportPresetGroup()` 时，建议显式指定 `viewportUnit: 'vw'` 或 `viewportUnit: 'vh'`。
 - 在业务里沉淀可复用 preset 时，优先使用 `definePreset(...)` 和 `definePresetGroup(...)`。
-- `RuleContext.fromUnit` 是用于规则匹配的源单位；`rawUnit` 保留原始大小写；`rawValue` 是 `Number(...)` 前的数字文本；`match` 是完整匹配片段。
-- 字符串单位 matcher 会归一化为小写。默认正则下 `'px'` 匹配小写 `px`；需要匹配 `PX`/`Px` 时使用 `/^px$/i` 或自定义 `unitRegex`。
-- 默认正则会跳过字符串、`url(...)` 和 `var(...)`。自定义 `unitRegex` 会完全替换默认正则；如果仍要跳过这些内容，需要在自定义正则里保留跳过分支。
+- `RuleContext.fromUnit` 是归一化为小写的源单位（默认 tokenizer 还会解码转义）；`rawUnit` 保留原始大小写与转义；`rawValue` 是 `Number(...)` 前带符号的数字文本；`match` 是完整匹配片段。
+- 如果需要主动处理 `var()` 中的内容，可以使用自定义 `unitRegex`，并自行保证匹配边界。
 - 如果你想直接抄场景配置，优先看 cookbook。
+
+## 匹配与处理边界
+
+默认使用 CSS tokenizer 匹配。字符串单位 matcher 会先 trim 并归一化为小写，
+因此 `'px'` 能匹配 `px`、`PX` 及等价的 CSS 转义写法。带符号数字和科学计数法
+按完整数值解析。`rem` 规则不会误改 `2remfoo` 的 `remfoo` 单位，也不会误改
+`foo2rem` 这样的标识符。字符串和 URL 保持原样，包括转义引号和大写 `URL()`。
+默认完整跳过任意嵌套深度的 `var()`；`calc()`、`min()` 等其他函数里的长度仍可转换。
+
+回调收到真实带符号数值：`-2rem` 传入 `-2`，`1e3rem` 传入 `1000`。
+全局与单规则的 `minValue` 都按源值绝对值比较，例如 `minValue: 2` 会转换
+`2rem` 和 `-2rem`，保留 `1rem`。
+
+显式 `unitRegex` 会完全绕过 tokenizer。数字必须放在第 1 个捕获组，单位放在
+第 2 个捕获组；缺少的 `g` 标志会自动补上。这个路径上的 token 边界、带符号数字、
+科学计数法，以及字符串、URL、`var()` 保护均由自定义正则负责。详见
+[API.zh-CN.md](./API.zh-CN.md)。
+
+`exclude`、`context.input` 和 `context.filePath` 指向根 CSS 入口，即使 importer
+已将其他文件展开进来。需要按导入声明的原文件处理时，在 transform 中读取
+`context.decl?.source?.input.file`。`replace: false` 的 fallback 去重同时比较
+属性、值和 `!important`，不会把优先级不同的声明当作重复项。
 
 ## Presets
 

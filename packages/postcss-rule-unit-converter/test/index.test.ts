@@ -3,6 +3,7 @@ import type { ConversionRule, UnitMatcher, UnitRule } from '../src/index'
 import postcss from 'postcss'
 import unitConverter, {
   composeRules,
+  createAnyUnitRegex,
   createUnitRegex,
   definePreset,
   definePresetGroup,
@@ -30,6 +31,14 @@ describe('postcss-rule-unit-converter', () => {
     const output = 'a:1px;b:2p;'.replace(regex, match => match.toUpperCase())
 
     expect(output).toBe('a:1PX;b:2P;')
+  })
+
+  it('retains explicitly exported regex helpers for custom matching', () => {
+    const regex = createAnyUnitRegex()
+    const matches = [...'1foo 2u2 3% "4rem" var(--x, 5rem) url(6rem.png)'.matchAll(regex)]
+      .filter(match => match[1])
+      .map(match => [match[1], match[2]])
+    expect(matches).toEqual([['1', 'foo'], ['2', 'u2'], ['3', '%']])
   })
 
   it('converts with custom rules', () => {
@@ -82,6 +91,23 @@ describe('postcss-rule-unit-converter', () => {
     expect(processed).toBe(output)
   })
 
+  it('keeps deliberately unmapped units and ignores empty map entries', () => {
+    const rules = presets.unitsToPx({
+      unitMap: [undefined, ['  ', 999], ['rem', null], ['foo', undefined], ['bar', 2]] as any,
+    })
+    const processed = postcss(unitConverter({ rules })).process('.a { a: 1rem; b: 2foo; c: 3bar; }').css
+
+    expect(processed).toBe('.a { a: 1rem; b: 2foo; c: 6px; }')
+    expect(rules).toHaveLength(3)
+  })
+
+  it('supports the direct rem-to-rpx alias and explicit output overrides', () => {
+    expect(postcss(unitConverter({ rules: [presets.remToRpx()] })).process('.a { width: 2rem; }').css)
+      .toBe('.a { width: 32rpx; }')
+    expect(postcss(unitConverter({ rules: [presets.remToRpx({ to: 'px', rootValue: 20 })] })).process('.a { width: 2rem; }').css)
+      .toBe('.a { width: 40px; }')
+  })
+
   it('preserves Map and Array unit map order without merging defaults', () => {
     const input = '.rule { width: 1rem; height: 2foo; margin: 3bar; padding: 4baz; }'
     const output = '.rule { width: 1rem; height: 4px; margin: 9px; padding: 4baz; }'
@@ -124,6 +150,8 @@ describe('postcss-rule-unit-converter', () => {
     })).process(input, { from: '/src/design.css' }).css
 
     expect(processed).toBe(output)
+    expect(postcss(unitConverter({ rules: [presets.remToPx({ rootValue: () => 20 })] }))
+      .process('h1 { font-size: 1rem; }').css).toBe('h1 { font-size: 20px; }')
   })
 
   it('respects replace=false, propList, mediaQuery, and selector blacklist', () => {

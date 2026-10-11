@@ -27,6 +27,29 @@ describe('postcss-plugin-shared', () => {
       expect(toFixed(0.12345, 2)).toBe(0.12)
       expect(toFixed(0.1299, 2)).toBe(0.13)
       expect(toFixed(-0.1299, 2)).toBe(-0.13)
+      expect(toFixed(1.005, 2)).toBe(1.01)
+      expect(toFixed(-1.005, 2)).toBe(-1.01)
+    })
+
+    it.each([Number.MAX_VALUE, -Number.MAX_VALUE, 1e308, -1e308])('preserves finite values whose rounding scale overflows: %s', (value) => {
+      expect(toFixed(value, 5)).toBe(value)
+      expect(toFixed(value, 100)).toBe(value)
+      expect(toFixed(value, 0)).toBe(value)
+    })
+
+    it('does not add phantom precision to very small signed values', () => {
+      expect(toFixed(1e-100, 100)).toBe(1e-100)
+      expect(toFixed(-1e-100, 100)).toBe(-1e-100)
+      expect(toFixed(1e-308, 100)).toBe(0)
+      expect(toFixed(-1e-308, 100)).toBe(-0)
+      expect(toFixed(Number.MIN_VALUE, 5)).toBe(0)
+      expect(toFixed(-Number.MIN_VALUE, 5)).toBe(-0)
+    })
+
+    it('preserves nonfinite numeric semantics', () => {
+      expect(toFixed(Number.POSITIVE_INFINITY, 2)).toBe(Number.POSITIVE_INFINITY)
+      expect(toFixed(Number.NEGATIVE_INFINITY, 2)).toBe(Number.NEGATIVE_INFINITY)
+      expect(toFixed(Number.NaN, 2)).toBeNaN()
     })
   })
 

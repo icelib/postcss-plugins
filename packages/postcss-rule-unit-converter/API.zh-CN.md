@@ -35,16 +35,16 @@ interface UserDefinedOptions {
 ```
 
 - `rules`：有序转换规则，先命中的先生效。
-- `unitRegex`：覆盖插件自动生成的匹配正则。
+- `unitRegex`：关闭默认 CSS tokenizer，改用自定义正则匹配。
 - `unitPrecision`：输出值的小数精度。
-- `minValue`：全局最小转换阈值。
+- `minValue`：全局源值绝对值阈值，默认 `0`；负长度也可转换。
 - `keepZeroUnit`：保留 `0px`、`0rem` 这类带单位的零值输出，而不是折叠成裸 `0`。
 - `selectorBlackList`：命中这些选择器时跳过。
 - `propList`：仅处理匹配的属性。支持 `!font-size`、`!padding*`、
   `!--wot-*-font-size` 这类取反 / glob 写法。
-- `replace`：是否直接替换原声明；否则追加 fallback。
+- `replace`：是否直接替换原声明，默认 `true`；否则追加 fallback，按属性、值与 `!important` 去重。
 - `mediaQuery`：是否处理 `@media` 参数中的单位。
-- `exclude`：按文件路径或 predicate 跳过整文件。
+- `exclude`：按路径或 predicate 跳过整个根入口，默认 `[/node_modules/i]`；不会按导入声明的原文件过滤。
 - `disabled`：禁用插件。
 
 ### `exclude`、`selectorBlackList`、`propList` 怎么选
@@ -53,7 +53,7 @@ interface UserDefinedOptions {
 - `selectorBlackList`：选择器级跳过，文件仍会继续处理
 - `propList`：属性级控制，在命中的规则里决定哪些属性处理、哪些属性跳过
 
-适合用 `exclude` 的场景是 `node_modules`、生成产物、整类文件不想处理。
+适合用 `exclude` 的场景是 `node_modules`、生成产物、整类根入口不想处理。
 适合用 `selectorBlackList` 的场景是某些组件或规则整体保留原样。适合用
 `propList` 的场景是文件和选择器仍然需要处理，但像 `font-size` 或
 `--wot-*-font-size` 这样的属性需要跳过。
@@ -75,15 +75,17 @@ interface ConversionRule {
 - `from`：源单位匹配器。
 - `to`：默认输出单位。
 - `factor`：简单倍率转换写法。
-- `minValue`：单条规则自己的最小转换阈值，会覆盖全局 `minValue`。
+- `minValue`：单条规则的源值绝对值阈值，会覆盖全局 `minValue`。
 - `transform`：需要完整自定义逻辑时使用。
 
-规则按数组顺序执行。如果多条规则都能命中同一个源单位，只有第一条会生效。
+规则按数组顺序执行，第一条命中的规则即为最终选择。即使它的 `transform`
+返回 `undefined`，或源值未达到它的 `minValue`，也不会改用后面的规则。
+每轮只转换原始 token 一次；`rem -> px` 后跟 `px -> rpx` 不会在同一轮连锁执行。
+再次处理时可能继续转换生成的 `px`，只想换算一次时应只配置一个转换阶段。
 
-字符串单位 matcher 会先 trim 并归一化为小写。使用默认自动生成的正则时，
-`'px'` 这类字符串 matcher 匹配 CSS 中的小写 `px`。如果需要匹配 `PX`/`Px`
-这类大小写形式，请使用 `/^px$/i` 这样的正则 matcher，或传入能捕获大写单位的
-自定义 `unitRegex`。原始大小写仍可通过 `rawUnit` 读取。
+字符串单位 matcher 会先 trim 并归一化为小写。默认 tokenizer 会解码 CSS 单位
+转义并归一化大小写，因此 `'px'` 也能匹配 `PX`、`Px` 及等价转义写法。
+正则与函数 matcher 接收到的也是归一化后的单位，`rawUnit` 保留原始文本。
 
 ## transform 回调
 
@@ -101,7 +103,10 @@ interface ConvertedValue {
 
 - 返回 `number`：沿用 `to` 作为输出单位。
 - 返回 `{ value, unit }`：同时自定义输出值和输出单位。
-- 返回 `undefined`：保持原始匹配结果不变。
+- 返回 `undefined`：保持原始匹配结果不变，不再尝试后续规则。
+
+`value` 带有真实符号，并支持科学计数法：`-2rem` 传入 `-2`，`1e3rem`
+传入 `1000`。调用回调前，`minValue` 按 `Math.abs(value)` 比较。
 
 ## RuleContext
 
@@ -124,17 +129,28 @@ interface RuleContext {
 }
 ```
 
-- `fromUnit`：用于规则匹配的源单位。插件使用自定义或宽泛单位正则时会归一化为小写。
-- `rawUnit`：原始匹配到的单位文本，会保留 `PX` 这类大小写。
-- `rawValue`：`Number(...)` 之前的原始数字文本，例如 `.5`。
-- `match`：完整匹配片段，例如 `.5PX`。
+- `fromUnit`：用于规则匹配的小写源单位；默认 tokenizer 还会解码 CSS 转义。
+- `rawUnit`：原始单位文本，保留 `PX` 这样的大小写与 CSS 转义。
+- `rawValue`：`Number(...)` 前带符号的数字文本，例如 `-.5` 或 `1e3`。
+- `match`：完整匹配片段，例如 `-.5PX`。
+- `input` 和 `filePath`：根入口的输入与路径，即使已展开其他 CSS 文件。声明的原文件可通过 `decl?.source?.input.file` 获取；处理媒体查询参数时没有 `decl`。
 
-默认自动生成的正则还包含对字符串、`url(...)` 和 `var(...)` 的跳过分支。
-这些分支不会提供数字 / 单位捕获组，因此 replacer 会原样返回。传入
-`unitRegex` 时会完全替换默认正则；如果仍希望跳过字符串、URL 或 CSS 变量，
-需要在自定义正则里保留对应跳过分支。正则必须把数字放在第 1 个捕获组、
-单位放在第 2 个捕获组；如果没有 `g` 标志，插件会自动补上，确保声明中的
-每个匹配项都会处理。
+支持没有根源码信息的手工 AST。回调和过滤上下文使用临时 `Input`，包含转换前
+的 AST 文本及显式传入的 `process({ from })`。它不会给节点附加源码信息，也
+不会为没有路径的输入伪造文件名。
+
+## 匹配边界
+
+不配置 `unitRegex` 时，CSS tokenizer 遍历完整的 dimension 和百分比 token。
+`rem` 规则不会误改 `2remfoo` 或 `foo2rem`。符号、科学计数法、单位大小写和
+CSS 转义都按 CSS token 边界处理。字符串、注释与 URL 内容保持不变，包括
+转义引号和大写 `URL()`。默认完整跳过任意嵌套深度的 `var()` 及其 fallback；
+`calc()`、`min()` 等其他函数中的长度正常转换。
+
+显式 `unitRegex` 会完全替代 tokenizer 及上述保护。正则必须把数字放在第 1 个
+捕获组、单位放在第 2 个捕获组；缺少 `g` 标志时会自动补上，确保每个匹配项都会
+处理。捕获到的单位会转成小写用于规则匹配；转义、带符号数字、科学计数法、
+token 边界及字符串、URL、`var()` 跳过逻辑由自定义正则负责。
 
 ## 辅助函数
 

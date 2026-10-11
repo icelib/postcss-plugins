@@ -96,8 +96,9 @@ export default {
 ```
 
 这个配置会保留原始声明，并把转换后的声明追加在后面。
+已有 fallback 按属性、值和 `!important` 比较，普通声明不会阻止重要声明的 fallback。
 
-## 按文件动态切换 Root Value
+## 按根入口动态切换 Root Value
 
 ```ts
 import unitConverter, { presets } from 'postcss-rule-unit-converter'
@@ -118,7 +119,23 @@ export default {
 适用场景：
 
 - 手机和平板共用一套构建
-- 不同文件需要不同转换基准
+- 不同根入口需要不同转换基准
+
+preset 的 resolver 接收根入口 `Input`。importer 将多个文件展开后，不会为每条
+声明切换 input。需要按原文件换算时，在规则回调中读取声明来源：
+
+```ts
+unitConverter({
+  rules: [{
+    from: 'rem',
+    to: 'px',
+    transform(value, context) {
+      const source = context.decl?.source?.input.file ?? context.filePath
+      return value * (source?.includes('tablet') ? 18 : 16)
+    },
+  }],
+})
+```
 
 ## 在业务里自定义 Preset
 

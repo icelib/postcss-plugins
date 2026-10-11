@@ -15,3 +15,15 @@ Tailwind 输出 `rem` 时，将 `postcss-rem-to-responsive-pixel` 放在 Tailwin
 ## 保护声明
 
 用 `propList` 控制属性，用 `selectorBlackList` 控制选择器，用 `exclude` 控制文件。`postcss-plugin-shared` 中的 matcher 规则在各个转换包之间保持一致。
+
+## 规则引擎的匹配边界
+
+`postcss-rule-unit-converter` 默认使用 CSS token，支持带符号数值、科学计数法和
+完整解码后的单位，保护字符串、URL、标识符及整个 `var()` fallback。
+显式 `unitRegex` 会替代这些保护。第一条命中规则即为最终选择，即使它返回
+`undefined`；单轮不连锁转换，重复处理则可能继续转换。详见
+[API 参考](/zh-CN/plugins/postcss-rule-unit-converter/api#匹配边界)。
+
+它的 `exclude` predicate 与回调 input 指向根 CSS 入口。展开 import 后，需要
+按原文件处理时，在 transform 中读取 `context.decl?.source?.input.file`；
+`exclude` 不会单独跳过被导入的文件。

@@ -1,11 +1,19 @@
 # Migration Guide
 
-把老包迁移到 `postcss-rule-unit-converter`，同时尽量保持行为不变。
+把老包迁移到 `postcss-rule-unit-converter`，保留换算公式，并检查下文的匹配边界变化。
 
 - 总览与快速上手：[README.zh-CN.md](./README.zh-CN.md)
 - API 文档：[API.zh-CN.md](./API.zh-CN.md)
 - 场景示例：[COOKBOOK.zh-CN.md](./COOKBOOK.zh-CN.md)
 - Preset 编写指南：[PRESET_AUTHORING.zh-CN.md](./PRESET_AUTHORING.zh-CN.md)
+
+## 匹配行为变化
+
+规则引擎默认使用 CSS tokenizer，完整解析带符号数字与科学计数法，解码单位并按
+小写匹配，保护字符串、URL、标识符及任意深度的整个 `var()` fallback。
+回调收到带符号数值，`minValue` 按绝对值比较。旧配置若依赖正则子串匹配或
+转换 `var()` 中的内容，请查看 [匹配边界](./API.zh-CN.md#匹配边界)，仅在确实
+需要时显式配置 `unitRegex`。
 
 ## 什么时候该迁移
 

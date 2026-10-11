@@ -95,12 +95,20 @@ function extractPackage(fixture, name, tarball) {
   fs.renameSync(join(fixture, 'package'), packageDir)
 }
 
-function linkRootDependency(fixture, name) {
-  const target = join(root, 'node_modules', name)
-  if (!fs.existsSync(target)) {
-    throw new Error(`Missing workspace dependency ${target}`)
+function linkRuntimeDependencies(fixture, name) {
+  const pkg = packageJson(name)
+  for (const dependency of Object.keys({ ...pkg.dependencies, ...pkg.peerDependencies })) {
+    if (packageNames.includes(dependency)) {
+      continue
+    }
+    const target = join(root, 'packages', name, 'node_modules', dependency)
+    if (!fs.existsSync(target)) {
+      throw new Error(`Missing runtime dependency ${target}`)
+    }
+    const destination = join(fixture, 'node_modules', name, 'node_modules', dependency)
+    fs.mkdirSync(dirname(destination), { recursive: true })
+    fs.symlinkSync(target, destination, 'junction')
   }
-  fs.symlinkSync(target, join(fixture, 'node_modules', name), 'junction')
 }
 
 async function main() {
@@ -114,10 +122,11 @@ async function main() {
       extractPackage(fixture, name, packPackage(fixture, name))
     }
 
-    // Resolve only the packed artifacts from the isolated fixture. The shared
-    // package still needs its normal runtime dependency, so link that one from
-    // the workspace without exposing workspace source exports to the test.
-    linkRootDependency(fixture, 'defu')
+    // Resolve workspace packages only from their packed artifacts. Link each
+    // package's declared runtime and peer dependencies without source exports.
+    for (const name of packageNames) {
+      linkRuntimeDependencies(fixture, name)
+    }
     const fixtureRequire = createRequire(fixtureEntry)
     const postcss = rootRequire('postcss')
 
