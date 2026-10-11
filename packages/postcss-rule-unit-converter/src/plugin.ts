@@ -5,14 +5,14 @@ import type {
   UnitMatcher,
   UserDefinedOptions,
 } from './types'
+import { Input } from 'postcss'
 import {
-  createAnyUnitRegex,
-  createUnitRegex,
   getConfig,
   postcssPlugin,
   toFixed,
   walkAndReplaceValues,
 } from './shared'
+import { createValueTransformer } from './tokenize'
 
 interface StringMatcherEntry {
   matcher: string
@@ -126,7 +126,6 @@ function normalizeRules(rules: readonly ConversionRule[]) {
     }
   }
 
-  const hasComplexMatcher = entries.some(entry => entry.type !== 'string')
   const stringRules = new Map<string, StringMatcherEntry>()
   for (const entry of entries) {
     if (entry.type === 'string' && !stringRules.has(entry.unit)) {
@@ -137,7 +136,6 @@ function normalizeRules(rules: readonly ConversionRule[]) {
   return {
     entries,
     stringRules,
-    hasComplexMatcher,
   }
 }
 
@@ -219,30 +217,29 @@ function createReplace(
   unitPrecision: number,
   minValue: number,
   keepZeroUnit: boolean,
-  normalizeUnitCase: boolean,
   context: Omit<RuleContext, 'fromUnit' | 'rawUnit' | 'rawValue' | 'match'>,
 ) {
   const shouldRound = unitPrecision >= 0 && unitPrecision <= 100
 
-  return function replace(m: string, $1?: string, $2?: string) {
+  return function replace(m: string, $1?: string, $2?: string, decodedUnit = $2) {
     if (!$1 || !$2) {
       return m
     }
 
     const value = Number($1)
-    if (Number.isNaN(value)) {
+    if (!Number.isFinite(value)) {
       return m
     }
 
     const rawUnit = $2
-    const fromUnit = normalizeUnitCase ? rawUnit.toLowerCase() : rawUnit
+    const fromUnit = decodedUnit!.toLowerCase()
     const rule = getRule(fromUnit)
     if (!rule) {
       return m
     }
 
     const effectiveMinValue = rule.minValue ?? minValue
-    if (value < effectiveMinValue) {
+    if (Math.abs(value) < effectiveMinValue) {
       return m
     }
 
@@ -273,7 +270,8 @@ function createReplace(
       return '0'
     }
 
-    return `${roundedValue}${normalized.unit}`
+    const sign = $1.startsWith('+') && roundedValue >= 0 ? '+' : ''
+    return `${sign}${roundedValue}${normalized.unit}`
   }
 }
 
@@ -297,39 +295,25 @@ const plugin: PostcssUnitConverter = (options: UserDefinedOptions = {}) => {
     return { postcssPlugin }
   }
 
-  const { entries, stringRules, hasComplexMatcher } = normalizeRules(rules)
+  const { entries, stringRules } = normalizeRules(rules)
   if (entries.length === 0) {
     return { postcssPlugin }
   }
-
-  let unitRegex: RegExp
-  let getRule: (unit: string) => ConversionRule | undefined
-  let normalizeUnitCase = true
 
   if (customUnitRegex) {
     if (countCapturingGroups(customUnitRegex.source) < 2) {
       throw new TypeError('unitRegex must provide numeric and unit capture groups')
     }
-    unitRegex = customUnitRegex
-    getRule = unit => getMatcherRuleWithStrings(entries, unit, stringRules)
-  }
-  else if (hasComplexMatcher) {
-    unitRegex = createAnyUnitRegex()
-    getRule = unit => getMatcherRuleWithStrings(entries, unit, stringRules)
-  }
-  else {
-    const units = Array.from(stringRules?.keys() ?? []).sort((a, b) => b.length - a.length)
-    if (units.length === 0) {
-      return { postcssPlugin }
-    }
-    unitRegex = createUnitRegex(units)
-    getRule = unit => stringRules?.get(unit)?.rule
-    normalizeUnitCase = false
   }
 
   return {
     postcssPlugin,
-    Once(css) {
+    Once(css, helpers) {
+      // Older wrappers call this hook directly. Without either a source Input
+      // or native PostCSS helpers, retain their historical no-op behavior.
+      if (!css.source?.input && !helpers) {
+        return
+      }
       type SharedWalkAndReplaceOptions = Parameters<typeof walkAndReplaceValues>[0]
       // A declaration often contains the same unit several times (for example
       // `margin: 1rem 2rem 1rem 2rem`). Complex matchers have to scan the
@@ -341,29 +325,40 @@ const plugin: PostcssUnitConverter = (options: UserDefinedOptions = {}) => {
         if (resolvedRules.has(unit)) {
           return resolvedRules.get(unit)
         }
-        const rule = getRule(unit)
+        const rule = getMatcherRuleWithStrings(entries, unit, stringRules)
         resolvedRules.set(unit, rule)
         return rule
       }
       const walkOptions: SharedWalkAndReplaceOptions = {
         root: css as unknown as SharedWalkAndReplaceOptions['root'],
-        unitRegex,
+        // Programmatic ASTs may have no source. Supply callback/filter context
+        // without attaching invented mapping metadata to any AST node.
+        input: css.source?.input ?? new Input(css.toString(), { from: helpers.result.opts.from, map: false }),
         propList,
         selectorBlackList,
         exclude,
         replace,
         mediaQuery,
-        createReplacer: (context) => {
-          return createReplace(
-            resolveRule,
-            unitPrecision,
-            minValue,
-            keepZeroUnit,
-            normalizeUnitCase,
-            context,
-          )
-        },
         shouldProcessAtRule: atRule => atRule.name === 'media',
+      }
+      const createConverter = (context: Parameters<typeof createReplace>[4]) => createReplace(
+        resolveRule,
+        unitPrecision,
+        minValue,
+        keepZeroUnit,
+        context,
+      )
+      if (customUnitRegex) {
+        walkOptions.unitRegex = customUnitRegex
+        walkOptions.createReplacer = (context) => {
+          const convert = createConverter(context)
+          // String#replace passes an offset after the captured unit; do not
+          // confuse that argument with the decoded CSS unit used by tokens.
+          return (match: string, rawValue?: string, rawUnit?: string) => convert(match, rawValue, rawUnit)
+        }
+      }
+      else {
+        walkOptions.createValueTransformer = context => createValueTransformer(createConverter(context))
       }
       walkAndReplaceValues(walkOptions)
     },

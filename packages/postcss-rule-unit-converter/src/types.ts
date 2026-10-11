@@ -10,8 +10,11 @@ export type UnitMatcher = string | RegExp | ((unit: string) => boolean)
  * Extra context passed to conversion callbacks.
  */
 export interface RuleContext extends ReplaceContext {
+  /** CSS-decoded unit, normalized to lowercase. */
   fromUnit: string
+  /** Original unit spelling, including CSS escapes and letter case. */
   rawUnit: string
+  /** Original number spelling, including its sign and exponent. */
   rawValue: string
   match: string
 }
@@ -28,6 +31,7 @@ export interface ConvertedValue {
  * Per-unit conversion callback used by `presets.unitsToPx`.
  */
 export type UnitTransform = (
+  /** Signed numeric value from the CSS token. */
   value: number,
   context: RuleContext,
 ) => number | ConvertedValue | undefined
@@ -63,18 +67,22 @@ export type RuleTransform = UnitTransform
  * Single conversion rule.
  *
  * Rules are matched in order. If multiple rules can match the same source
- * unit, the first one wins.
+ * unit, the first one wins, even if it declines conversion. Results are not
+ * matched against subsequent rules in the same pass; another plugin run can
+ * convert them again.
  */
 export interface ConversionRule {
   from: UnitMatcher
   to?: string
   factor?: number
+  /** Minimum absolute magnitude of the original value. */
   minValue?: number
   transform?: RuleTransform
 }
 
 export type RuleGroup = ConversionRule | readonly ConversionRule[]
-export type PresetOptions = Record<string, unknown> | undefined
+/** Preset option objects do not require a string index signature. */
+export type PresetOptions = object | undefined
 export type PresetFactory<TOptions extends PresetOptions = undefined> = (
   options?: TOptions,
 ) => ConversionRule
@@ -92,8 +100,13 @@ export type NumericResolver = number | ((input: Input) => number)
  */
 export interface UserDefinedOptions {
   rules?: readonly ConversionRule[]
+  /**
+   * Override CSS tokenization with custom numeric and unit capture groups.
+   * The expression controls its own token boundaries and protected functions.
+   */
   unitRegex?: RegExp | undefined
   unitPrecision?: number
+  /** Minimum absolute magnitude of the original value. Defaults to 0. */
   minValue?: number
   keepZeroUnit?: boolean
   selectorBlackList?: readonly (string | RegExp)[]
@@ -104,6 +117,10 @@ export interface UserDefinedOptions {
   propList?: readonly (string | RegExp)[]
   replace?: boolean
   mediaQuery?: boolean
+  /**
+   * Excludes the stylesheet using its root input path. Imported declarations
+   * retain their own source in context.decl.source for per-source callbacks.
+   */
   exclude?: readonly (string | RegExp)[] | ((filePath: string) => boolean)
   disabled?: boolean
 }

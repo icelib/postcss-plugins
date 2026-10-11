@@ -52,7 +52,7 @@ Entry: `packages/postcss-plugin-shared/src/index.ts`
 - `createAdvancedPropListMatcher`: advanced prop matcher (wildcards + negation) for `string[]`
 - `createExcludeMatcher`: builds an exclude matcher from `exclude` (array or function)
 - `createSelectorBlacklistMatcher`: selector blacklist matcher with optional cache
-- `declarationExists`: checks whether a rule/decls already contains the same `prop/value` to avoid duplicates
+- `declarationExists`: checks whether a rule/decls already contains the same `prop/value`, optionally also importance, to avoid duplicates
 - `walkAndReplaceValues`: shared walker to replace declaration values and media params
 
 ## API
@@ -221,15 +221,45 @@ isExcluded('/a/node_modules/x.css') // true
 isExcluded('/a/src/vendor.css') // true
 ```
 
-### `declarationExists(decls, prop, value)`
+### `declarationExists(decls, prop, value, important?)`
 
-Checks whether a rule already contains the same declaration (commonly used to avoid duplicates when `replace: false` and `cloneAfter` is used).
+Checks whether a rule already contains the same property and value (commonly used to avoid duplicates when `replace: false` and `cloneAfter` is used). Omit `important` to match either priority, preserving the existing three-argument behavior. Pass `true` or `false` to match that exact normalized `!important` flag.
 
 ### `walkAndReplaceValues(options)`
 
 With the default `replace: true`, every matched declaration is converted in place, even if the same property and converted value already exist. Declaration order and `!important` are preserved; this function does not remove duplicate declarations.
 
-`skipDuplicate` defaults to `true` and only controls insertion when `replace: false`: it prevents adding an existing property/value pair while retaining the source declaration. Set `skipDuplicate: false` to insert the converted declaration even when that pair already exists.
+`skipDuplicate` defaults to `true` and only controls insertion when `replace: false`: it prevents adding an existing property/value/importance combination while retaining the source declaration. A normal declaration does not suppress an important fallback, or vice versa. Set `skipDuplicate: false` to insert the converted declaration even when that combination already exists.
+
+Choose one value-conversion strategy:
+
+```ts
+interface WalkAndReplaceOptions {
+  // Optional context for source-less programmatic ASTs:
+  input?: Input
+  // Existing regex strategy:
+  unitRegex?: RegExp
+  createReplacer?: (context: ReplaceContext) => (m: string, $1?: string) => string
+  // Whole-value strategy; takes precedence when provided:
+  createValueTransformer?: (context: ReplaceContext) => (value: string) => string
+  // Other walker options are unchanged.
+}
+```
+
+`createValueTransformer` bypasses regex matching and its precheck completely. It
+receives each eligible declaration value, and media parameters when `mediaQuery`
+is enabled. Filters, context, replacement/fallback handling, and deduplication are
+shared by both strategies. Without a whole-value transformer, both `unitRegex` and
+`createReplacer` are required; an incomplete strategy throws `TypeError`.
+
+`context.input`, `context.filePath`, and `exclude` use the root CSS entry. A
+transformer can inspect `context.decl?.source?.input.file` to identify an imported
+declaration's original file.
+
+For a programmatic root without `root.source.input`, pass an optional `input` to
+provide callback and exclusion context. The real root input takes precedence.
+The walker does not attach the supplied input to any AST source or create source
+map metadata; without either input it leaves the root unchanged.
 
 `decls` only needs a `.some(...)` method that iterates PostCSS `ChildNode`s (usually a `Rule`).
 
@@ -237,7 +267,7 @@ With the default `replace: true`, every matched declaration is converted in plac
 import { declarationExists } from 'postcss-plugin-shared'
 
 // inside PostCSS visitor
-if (!declarationExists(rule, decl.prop, nextValue)) {
+if (!declarationExists(rule, decl.prop, nextValue, Boolean(decl.important))) {
   decl.cloneAfter({ value: nextValue })
 }
 ```

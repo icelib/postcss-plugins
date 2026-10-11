@@ -1,3 +1,4 @@
+import type { Plugin } from 'postcss'
 import type {
   ConversionRule,
   RuleContext,
@@ -161,13 +162,11 @@ const plugin: PostcssUnitsToPx = (options: UserDefinedOptions = {}) => {
     rules,
     selectorBlackList,
     unitPrecision,
-  }) as { Once?: (css: unknown) => void }
+  }) as Plugin
 
   return {
     postcssPlugin,
-    Once(css) {
-      wrappedPlugin.Once?.(css)
-    },
+    Once: wrappedPlugin.Once!,
   }
 }
 

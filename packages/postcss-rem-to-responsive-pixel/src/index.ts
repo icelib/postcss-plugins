@@ -1,6 +1,6 @@
-import type { Root } from 'postcss'
+import type { Plugin } from 'postcss'
 import type { PostcssRemToResponsivePixel, UserDefinedOptions } from './types'
-import unitConverter, { presets } from 'postcss-rule-unit-converter'
+import unitConverter, { createUnitRegex, presets } from 'postcss-rule-unit-converter'
 import { getConfig, postcssPlugin } from './shared'
 
 export * from './types'
@@ -67,13 +67,13 @@ const plugin: PostcssRemToResponsivePixel = (
     ],
     selectorBlackList,
     unitPrecision,
-  }) as { Once?: (css: Root) => void }
+    // Keep the wrapper's historical case-sensitive rem parsing.
+    unitRegex: createUnitRegex(['rem']),
+  }) as Plugin
 
   return {
     postcssPlugin,
-    [processorStage]: (css: Root) => {
-      wrappedPlugin.Once?.(css)
-    },
+    [processorStage]: wrappedPlugin.Once,
   }
 }
 

@@ -19,8 +19,13 @@ Rule-driven PostCSS unit conversion plugin.
 
 - Each rule matches a source unit and produces a next value.
 - Rules are evaluated in order.
-- If two rules can match the same source unit, the first matching rule wins.
+- If two rules can match the same source unit, the first matching rule wins, even if its transform returns `undefined`.
+- Each source token is converted once per processing run; a generated unit is not passed to later rules. Running the plugin again may convert that output.
 - Use `composeRules(...)` when you want to merge multiple preset groups and custom rules into one ordered rule list.
+
+## Runtime Requirements
+
+Node.js 20.19.0 or newer and PostCSS 8 are required.
 
 ## Usage
 
@@ -243,21 +248,40 @@ const result = await postcss([
 
 `RuleContext` extends the shared replace context and also exposes:
 
-- `fromUnit`: source unit used for rule matching; it is normalized to lowercase when the plugin uses a custom or broad unit regex
-- `rawUnit`: matched unit text before normalization, for example `PX`
-- `rawValue`: matched numeric text before `Number(...)`, for example `40`
+- `fromUnit`: lowercase source unit for rule matching; default tokenization also decodes CSS escapes
+- `rawUnit`: original unit text before decoding and normalization, for example `PX` or a CSS-escaped spelling
+- `rawValue`: original signed numeric text before `Number(...)`, for example `-2` or `1e3`
 - `match`: full matched fragment, for example `40PX`
 
 Advanced matching options:
 
-- `unitRegex`: override the generated matching regex when you need custom parsing behavior such as matching inside `var(...)`
+- `unitRegex`: replace default tokenization with your own matching regex, for example to opt into matching inside `var(...)`
 - `keepZeroUnit`: keep `0px`, `0rem`, or custom zero outputs instead of collapsing them to bare `0`
 
-String unit matchers are trimmed and normalized to lowercase. With the default
-generated regex, `'px'` matches lowercase `px`; use `/^px$/i` or a custom
-`unitRegex` if you need uppercase unit spellings. The default regex skips
-quoted strings, `url(...)`, and `var(...)`; a custom `unitRegex` replaces that
-regex, so include those skip branches yourself if you still need them.
+## Matching And Processing Boundaries
+
+Default matching uses CSS tokens. String unit matchers are trimmed and normalized
+to lowercase, so `'px'` matches `px`, `PX`, and equivalent CSS-escaped units.
+Signed numbers and scientific notation are parsed as complete values. A rule for
+`rem` does not match the unit `remfoo` in `2remfoo` or the identifier `foo2rem`.
+Strings and URLs remain untouched, including escaped quotes and uppercase `URL()`.
+The entire `var()` function is skipped at every nesting depth; other functions
+such as `calc()` and `min()` can contain convertible dimensions.
+
+Callbacks receive the signed value: `-2rem` passes `-2`, and `1e3rem` passes
+`1000`. Global and per-rule `minValue` compare the absolute source magnitude, so
+`minValue: 2` permits both `2rem` and `-2rem` while leaving `1rem` unchanged.
+
+An explicit `unitRegex` bypasses tokenization completely. It must capture the
+numeric value in group 1 and the unit in group 2; a missing global flag is added.
+You are responsible for token boundaries, signed/scientific numbers, and any
+string, URL, or `var()` protection on that custom path. See [API.md](./API.md).
+
+`exclude`, `context.input`, and `context.filePath` refer to the root CSS entry,
+including when an importer has expanded other files into it. For decisions based
+on an imported declaration's own source, inspect `context.decl?.source?.input.file`
+in a transform callback. With `replace: false`, fallback deduplication compares
+property, value, and `!important`, preserving declarations with different priority.
 
 ## Rule Tips
 

@@ -1,5 +1,6 @@
+import type { Plugin } from 'postcss'
 import type { PostcssRemToViewport, UserDefinedOptions } from './types'
-import unitConverter, { presets } from 'postcss-rule-unit-converter'
+import unitConverter, { createUnitRegex, presets } from 'postcss-rule-unit-converter'
 import { getConfig, postcssPlugin } from './shared'
 
 /**
@@ -62,13 +63,13 @@ const plugin: PostcssRemToViewport = (
     ],
     selectorBlackList,
     unitPrecision,
-  }) as { Once?: (css: unknown) => void }
+    // Keep the wrapper's historical case-sensitive rem parsing.
+    unitRegex: createUnitRegex(['rem']),
+  }) as Plugin
 
   return {
     postcssPlugin,
-    Once(css) {
-      wrappedPlugin.Once?.(css)
-    },
+    Once: wrappedPlugin.Once!,
   }
 }
 

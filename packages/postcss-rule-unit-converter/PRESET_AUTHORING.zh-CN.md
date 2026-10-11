@@ -22,6 +22,10 @@
 
 ## 编写单条 Preset
 
+Preset options 可以使用命名 interface 或普通对象类型，无需添加索引签名。
+`PresetFactory`、`PresetGroupFactory`、`definePreset` 和 `definePresetGroup`
+统一接受 `object | undefined`，不接受 `number` 等原始类型。
+
 ```ts
 import type { PresetFactory } from 'postcss-rule-unit-converter'
 import { definePreset } from 'postcss-rule-unit-converter'
@@ -145,6 +149,11 @@ const rule = {
 }
 ```
 
+回调接收带符号的数值，包括科学计数法；不要为负值再次添加负号。
+`minValue` 按绝对值比较。`context.input` 和 `context.filePath` 指向根入口；
+需要区分导入声明的来源时，读取 `context.decl?.source?.input.file`。
+默认 tokenizer 与自定义 `unitRegex` 的边界见 [匹配边界](./API.zh-CN.md#匹配边界)。
+
 ## 文件组织
 
 推荐目录结构：
@@ -199,6 +208,9 @@ it('converts rem to dp', () => {
 - `propList` / selector blacklist 交互
 - 基于 `input` 的动态参数
 - 原始匹配信息分支
+- 带符号数值、科学计数法、零值与绝对值 `minValue` 阈值
+- 完整单位边界、字符串 / URL 与深层 `var()` fallback
+- 输出单位还能匹配规则时的重复处理
 
 ## 组合策略
 

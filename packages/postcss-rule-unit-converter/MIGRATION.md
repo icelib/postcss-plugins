@@ -1,11 +1,21 @@
 # Migration Guide
 
-Move legacy packages to `postcss-rule-unit-converter` without changing behavior.
+Move legacy packages to `postcss-rule-unit-converter`, preserving conversion formulas while reviewing the matching boundaries below.
 
 - Overview: [README.md](./README.md)
 - API: [API.md](./API.md)
 - Recipes: [COOKBOOK.md](./COOKBOOK.md)
 - Preset authoring: [PRESET_AUTHORING.md](./PRESET_AUTHORING.md)
+
+## Matching Changes
+
+The rule engine uses CSS tokenization by default. It treats signed/scientific
+numbers as complete values, matches case-insensitive decoded units, and protects
+strings, URLs, identifiers, and the entire `var()` fallback at any depth.
+Callbacks receive signed values, and `minValue` compares absolute magnitude.
+If your old configuration relied on regex substring matches or converting inside
+`var()`, review [matching boundaries](./API.md#matching-boundaries) and explicitly
+configure `unitRegex` only when that behavior is intended.
 
 ## When To Migrate
 

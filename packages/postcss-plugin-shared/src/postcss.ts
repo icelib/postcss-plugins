@@ -14,6 +14,7 @@ import {
 
 /**
  * Check whether a declaration with the same property and value already exists.
+ * When supplied, `important` also requires the same importance flag.
  *
  * @example
  * if (declarationExists(rule, 'margin', '16px')) return
@@ -22,6 +23,7 @@ export function declarationExists(
   decls: { some: (cb: (node: ChildNode) => boolean) => boolean },
   prop: string,
   value: string,
+  important?: boolean,
 ) {
   const nodes = decls as unknown as { length?: number, [index: number]: ChildNode }
   const length = nodes.length
@@ -34,7 +36,8 @@ export function declarationExists(
       }
 
       const decl = node as Declaration
-      if (decl.prop === prop && decl.value === value) {
+      if (decl.prop === prop && decl.value === value
+        && (important === undefined || Boolean(decl.important) === important)) {
         return true
       }
     }
@@ -48,6 +51,7 @@ export function declarationExists(
     }
     const decl = node as Declaration
     return decl.prop === prop && decl.value === value
+      && (important === undefined || Boolean(decl.important) === important)
   })
 }
 
@@ -88,7 +92,10 @@ export interface ReplaceContext {
  */
 export interface WalkAndReplaceOptions {
   root: Root
-  unitRegex: RegExp
+  /** Context for source-less ASTs. Existing root.source.input takes precedence. */
+  input?: Input
+  /** Required with createReplacer unless createValueTransformer is supplied. */
+  unitRegex?: RegExp
   propList: readonly (string | RegExp)[]
   selectorBlackList?: readonly (string | RegExp)[]
   exclude?: readonly (string | RegExp)[] | ((filePath: string) => boolean)
@@ -96,7 +103,10 @@ export interface WalkAndReplaceOptions {
   /** 仅在 replace:false 时跳过已存在的转换结果；替换模式始终更新当前声明。 */
   skipDuplicate?: boolean
   mediaQuery?: boolean
-  createReplacer: (context: ReplaceContext) => (m: string, $1?: string) => string
+  /** Required with unitRegex unless createValueTransformer is supplied. */
+  createReplacer?: (context: ReplaceContext) => (m: string, $1?: string) => string
+  /** Transforms the complete value, taking precedence over the regex strategy. */
+  createValueTransformer?: (context: ReplaceContext) => (value: string) => string
   shouldProcessDecl?: (decl: Declaration) => boolean
   shouldProcessAtRule?: (atRule: AtRule) => boolean
 }
@@ -109,8 +119,8 @@ interface DeclarationIndex {
   counts: Map<string, number>
 }
 
-function declarationKey(prop: string, value: string) {
-  return `${prop}\0${value}`
+function declarationKey(prop: string, value: string, important: boolean | undefined) {
+  return `${prop}\0${value}\0${important ? '1' : '0'}`
 }
 
 function createDeclarationIndex(container: DeclarationContainer): DeclarationIndex {
@@ -119,19 +129,19 @@ function createDeclarationIndex(container: DeclarationContainer): DeclarationInd
     if (node.type !== 'decl') {
       continue
     }
-    const key = declarationKey(node.prop, node.value)
+    const key = declarationKey(node.prop, node.value, node.important)
     counts.set(key, (counts.get(key) ?? 0) + 1)
   }
   return { counts }
 }
 
-function incrementDeclaration(index: DeclarationIndex, prop: string, value: string) {
-  const key = declarationKey(prop, value)
+function incrementDeclaration(index: DeclarationIndex, prop: string, value: string, important: boolean | undefined) {
+  const key = declarationKey(prop, value, important)
   index.counts.set(key, (index.counts.get(key) ?? 0) + 1)
 }
 
-function decrementDeclaration(index: DeclarationIndex, prop: string, value: string) {
-  const key = declarationKey(prop, value)
+function decrementDeclaration(index: DeclarationIndex, prop: string, value: string, important: boolean | undefined) {
+  const key = declarationKey(prop, value, important)
   const count = index.counts.get(key) ?? 0
   if (count <= 1) {
     index.counts.delete(key)
@@ -141,8 +151,8 @@ function decrementDeclaration(index: DeclarationIndex, prop: string, value: stri
   }
 }
 
-function hasDeclaration(index: DeclarationIndex, prop: string, value: string) {
-  return (index.counts.get(declarationKey(prop, value)) ?? 0) > 0
+function hasDeclaration(index: DeclarationIndex, prop: string, value: string, important: boolean | undefined) {
+  return (index.counts.get(declarationKey(prop, value, important)) ?? 0) > 0
 }
 
 function createGlobalRegex(regex: RegExp) {
@@ -177,12 +187,29 @@ export function walkAndReplaceValues(options: WalkAndReplaceOptions) {
     skipDuplicate = true,
     mediaQuery = false,
     createReplacer,
+    createValueTransformer,
     shouldProcessDecl,
     shouldProcessAtRule,
   } = options
 
+  let hasCandidate: (value: string) => boolean
+  let transformValue: (value: string, context: ReplaceContext) => string
+  if (createValueTransformer) {
+    hasCandidate = () => true
+    transformValue = (value, context) => createValueTransformer(context)(value)
+  }
+  else {
+    if (!unitRegex || !createReplacer) {
+      throw new TypeError('walkAndReplaceValues requires createValueTransformer or both unitRegex and createReplacer')
+    }
+    const replacementRegex = createGlobalRegex(unitRegex)
+    const unitTestRegex = new RegExp(unitRegex.source, unitRegex.flags.replace(/[gy]/g, ''))
+    hasCandidate = value => unitTestRegex.test(value)
+    transformValue = (value, context) => value.replace(replacementRegex, createReplacer(context))
+  }
+
   const source = root.source
-  const input = source?.input
+  const input = source?.input ?? options.input
   if (!input) {
     return
   }
@@ -194,8 +221,6 @@ export function walkAndReplaceValues(options: WalkAndReplaceOptions) {
   }
 
   const satisfyPropList = createPropListMatcher(propList)
-  const replacementRegex = createGlobalRegex(unitRegex)
-  const unitTestRegex = new RegExp(unitRegex.source, unitRegex.flags.replace(/[gy]/g, ''))
   const hasSelectorBlackList = selectorBlackList.length > 0
   const isBlacklisted = hasSelectorBlackList
     ? createSelectorBlacklistMatcher(selectorBlackList, { cache: true })
@@ -243,7 +268,7 @@ export function walkAndReplaceValues(options: WalkAndReplaceOptions) {
       if (shouldProcessDecl && !shouldProcessDecl(decl)) {
         return
       }
-      if (!unitTestRegex.test(decl.value)) {
+      if (!hasCandidate(decl.value)) {
         return
       }
 
@@ -265,28 +290,27 @@ export function walkAndReplaceValues(options: WalkAndReplaceOptions) {
         prop: decl.prop,
         ...(atRule ? { atRule } : {}),
       }
-      const replacer = createReplacer(context)
-      const nextValue = decl.value.replace(replacementRegex, replacer)
+      const nextValue = transformValue(decl.value, context)
       if (nextValue === decl.value) {
         return
       }
 
       const index = getDeclarationIndex(parent ?? root)
-      if (!replace && skipDuplicate && index && hasDeclaration(index, decl.prop, nextValue)) {
+      if (!replace && skipDuplicate && index && hasDeclaration(index, decl.prop, nextValue, decl.important)) {
         return
       }
 
       if (replace) {
         if (index) {
-          decrementDeclaration(index, decl.prop, decl.value)
-          incrementDeclaration(index, decl.prop, nextValue)
+          decrementDeclaration(index, decl.prop, decl.value, decl.important)
+          incrementDeclaration(index, decl.prop, nextValue, decl.important)
         }
         decl.value = nextValue
         return
       }
 
       if (index) {
-        incrementDeclaration(index, decl.prop, nextValue)
+        incrementDeclaration(index, decl.prop, nextValue, decl.important)
       }
       const clone = decl.cloneAfter({ value: nextValue })
       generatedDeclarations.add(clone)
@@ -295,15 +319,14 @@ export function walkAndReplaceValues(options: WalkAndReplaceOptions) {
 
     if (mediaQuery && node.type === 'atrule') {
       const atRule = node as AtRule
-      if (!shouldProcess(atRule) || !unitTestRegex.test(atRule.params)) {
+      if (!shouldProcess(atRule) || !hasCandidate(atRule.params)) {
         return
       }
       const context: ReplaceContext = {
         ...baseContext,
         atRule,
       }
-      const replacer = createReplacer(context)
-      const nextParams = atRule.params.replace(replacementRegex, replacer)
+      const nextParams = transformValue(atRule.params, context)
       if (nextParams !== atRule.params) {
         atRule.params = nextParams
       }

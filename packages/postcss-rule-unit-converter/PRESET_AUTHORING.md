@@ -22,6 +22,11 @@ Use a preset group when:
 
 ## Authoring A Single Preset
 
+Preset options can use named interfaces or object types without an index
+signature. `PresetFactory`, `PresetGroupFactory`, `definePreset`, and
+`definePresetGroup` share the `object | undefined` constraint; primitive option
+types such as `number` are rejected.
+
 ```ts
 import type { PresetFactory } from 'postcss-rule-unit-converter'
 import { definePreset } from 'postcss-rule-unit-converter'
@@ -145,6 +150,13 @@ const rule = {
 }
 ```
 
+Callbacks receive signed values, including scientific notation. Do not add a
+second sign to negative inputs. `minValue` is an absolute-magnitude threshold.
+`context.input` and `context.filePath` identify the root entry; use
+`context.decl?.source?.input.file` when an imported declaration's origin matters.
+See [matching boundaries](./API.md#matching-boundaries) for the default tokenizer
+and the explicit `unitRegex` escape hatch.
+
 ## File Organization
 
 Recommended package layout:
@@ -199,6 +211,9 @@ Recommended coverage:
 - `propList` / selector blacklist interaction
 - dynamic `input`-based options
 - raw match context branches
+- signed/scientific values, zero, and absolute `minValue` thresholds
+- complete unit boundaries, strings/URLs, and deeply nested `var()` fallbacks
+- repeated processing when output units can match another rule
 
 ## Composition Strategy
 

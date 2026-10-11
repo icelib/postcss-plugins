@@ -11,6 +11,16 @@ export function toFixed(number: number, precision: number) {
   const multiplier = 10 ** precision
   const sign = Math.sign(number)
   const absNumber = Math.abs(number)
-  const rounded = Math.round((absNumber + Number.EPSILON) * multiplier) / multiplier
+  // A fixed EPSILON can overwhelm very small lengths. Use a relative
+  // correction below that magnitude, preserving ordinary decimal rounding.
+  const correction = absNumber < Number.EPSILON ? Number.EPSILON * absNumber : Number.EPSILON
+  const correctedNumber = absNumber + correction
+  const scaledNumber = correctedNumber * multiplier
+  // Scaling large finite lengths can overflow even though no fractional
+  // digits remain to round at the requested precision.
+  if (Number.isFinite(number) && !Number.isFinite(scaledNumber)) {
+    return number
+  }
+  const rounded = Math.round(scaledNumber) / multiplier
   return sign * rounded
 }

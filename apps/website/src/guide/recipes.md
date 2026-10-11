@@ -15,3 +15,16 @@ The focused packages remain useful when their old API is part of your public bui
 ## Protecting declarations
 
 Use `propList` for property-level control, `selectorBlackList` for selectors, and `exclude` for file-level decisions. The shared matcher behavior is documented in `postcss-plugin-shared` and is consistent across the conversion packages.
+
+## Rule-engine matching boundaries
+
+`postcss-rule-unit-converter` uses CSS tokens by default: signed/scientific values
+and complete decoded units are supported, while strings, URLs, identifiers, and
+the whole `var()` fallback remain untouched. An explicit `unitRegex` replaces
+that protection. The first matching rule wins even when it returns `undefined`,
+and conversions do not chain in one run; repeated processing may convert again.
+See the [API reference](/plugins/postcss-rule-unit-converter/api#matching-boundaries).
+
+Its `exclude` predicate and callback input refer to the root CSS entry. After
+imports are expanded, inspect `context.decl?.source?.input.file` in a transform
+for per-source decisions; `exclude` does not skip individual imported files.

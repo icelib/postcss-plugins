@@ -1,4 +1,4 @@
-import type { Input, Result, Root } from 'postcss'
+import type { Helpers, Input, Plugin, Result, Root } from 'postcss'
 import type { ConversionRule } from 'postcss-rule-unit-converter'
 import type {
   PxTransformMethod,
@@ -354,7 +354,7 @@ function plugin(userOptions: PxTransformOptions = {}) {
     rules,
     unitPrecision,
     unitRegex: pxRegex(transUnits),
-  }) as { Once?: (css: Root) => void }
+  }) as Plugin
 
   return {
     postcssPlugin,
@@ -374,7 +374,7 @@ function plugin(userOptions: PxTransformOptions = {}) {
         : false
 
       return {
-        Once(css: Root) {
+        Once(css: Root, helpers: Helpers) {
           css.walkComments((comment) => {
             if (comment.text === 'postcss-pxtrans disable') {
               css.raws['__pxtransSkip'] = true
@@ -387,7 +387,7 @@ function plugin(userOptions: PxTransformOptions = {}) {
             return
           }
 
-          wrappedPlugin.Once?.(css)
+          return wrappedPlugin.Once?.(css, helpers)
         },
       }
     },

@@ -50,6 +50,9 @@
   "files": [
     "dist"
   ],
+  "engines": {
+    "node": ">=20.19.0"
+  },
   "scripts": {
     "dev": "tsdown -w",
     "build": "tsdown",
@@ -66,6 +69,7 @@
     "postcss": "^8"
   },
   "dependencies": {
+    "@csstools/css-tokenizer": "4.0.2",
     "postcss-plugin-shared": "workspace:*"
   },
   "tsd": {
