@@ -255,7 +255,8 @@ const result = await postcss([
 
 Advanced matching options:
 
-- `unitRegex`: replace default tokenization with your own matching regex, for example to opt into matching inside `var(...)`
+- `transformVarFallbacks`: opt into converting `var()` fallback dimensions while protecting the variable name, strings, and URLs (default `false`)
+- `unitRegex`: replace default tokenization with your own matching regex; this remains authoritative even with `transformVarFallbacks: true`
 - `keepZeroUnit`: keep `0px`, `0rem`, or custom zero outputs instead of collapsing them to bare `0`
 
 ## Matching And Processing Boundaries
@@ -266,7 +267,9 @@ Signed numbers and scientific notation are parsed as complete values. A rule for
 `rem` does not match the unit `remfoo` in `2remfoo` or the identifier `foo2rem`.
 Strings and URLs remain untouched, including escaped quotes and uppercase `URL()`.
 The entire `var()` function is skipped at every nesting depth; other functions
-such as `calc()` and `min()` can contain convertible dimensions.
+such as `calc()` and `min()` can contain convertible dimensions. Set
+`transformVarFallbacks: true` to convert fallback dimensions at any depth without
+resolving the variable or choosing a fallback. An unclosed `var()` stays unchanged.
 
 Callbacks receive the signed value: `-2rem` passes `-2`, and `1e3rem` passes
 `1000`. Global and per-rule `minValue` compare the absolute source magnitude, so
@@ -292,7 +295,7 @@ property, value, and `!important`, preserving declarations with different priori
 - For `presets.viewportPresetGroup()`, choose `viewportUnit: 'vw'` or `viewportUnit: 'vh'` explicitly when you want one axis.
 - Prefer `definePreset(...)` and `definePresetGroup(...)` when authoring reusable presets in your own package or app config.
 - Use `RuleContext.rawUnit`, `RuleContext.rawValue`, and `RuleContext.match` when your transform depends on original casing or exact matched text.
-- Use `unitRegex` when you need non-default matching behavior such as not skipping `var(...)` fallbacks.
+- Use `transformVarFallbacks: true` to convert fallback lengths safely; reserve `unitRegex` for custom matching semantics.
 - Use `keepZeroUnit` when downstream tooling expects `0` to keep its explicit unit.
 - If you want more scenario-based examples, see the cookbook.
 

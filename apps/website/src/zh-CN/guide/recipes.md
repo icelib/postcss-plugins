@@ -20,7 +20,8 @@ Tailwind 输出 `rem` 时，将 `postcss-rem-to-responsive-pixel` 放在 Tailwin
 
 `postcss-rule-unit-converter` 默认使用 CSS token，支持带符号数值、科学计数法和
 完整解码后的单位，保护字符串、URL、标识符及整个 `var()` fallback。
-显式 `unitRegex` 会替代这些保护。第一条命中规则即为最终选择，即使它返回
+设置 `transformVarFallbacks: true` 可递归转换 fallback，同时继续保护变量名、
+字符串和 URL。显式 `unitRegex` 会替代这些保护和 fallback 选项。第一条命中规则即为最终选择，即使它返回
 `undefined`；单轮不连锁转换，重复处理则可能继续转换。详见
 [API 参考](/zh-CN/plugins/postcss-rule-unit-converter/api#匹配边界)。
 

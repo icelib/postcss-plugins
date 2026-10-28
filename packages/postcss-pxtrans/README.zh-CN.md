@@ -182,10 +182,17 @@ RN eject：
 - `replace`: `boolean`，`false` 时追加新声明
 - `mediaQuery`: `boolean`，是否转换 `@media` 中的 px
 - `minPixelValue`: `number`，小于该值时不转换（Harmony 仍会转 `ch`）
+- `transformVarFallbacks`：`boolean`，默认 `false`；使用 CSS token 转换 fallback，保护变量名、字符串和 URL
 - `onePxTransform`: `boolean`，是否转换 1px（Harmony 下 `PX` 仍转 `ch`）
 - `exclude`：`Array<string | RegExp> | (filePath?: string) => boolean`，命中直接跳过整文件
 
 > 说明：插件内部复用了 `postcss-plugin-shared` 的通用能力（propList 匹配、单位正则构建等）。
+
+开启 `transformVarFallbacks: true` 后，`designWidth: 375` 会把
+`var(--size48px, 48px)` 转成 `var(--size48px, 96rpx)`。单位大小写与平台规则、
+`rootValue(input, m, value)` 的无符号回调参数保持原约定，同时完整处理带符号数字
+和科学计数法；负零可能规范化为零。默认 `false` 保留旧正则路径。此选项不改变
+`postcss-rem-to-responsive-pixel`。
 
 ### `exclude`、`selectorBlackList`、`propList` 怎么选
 

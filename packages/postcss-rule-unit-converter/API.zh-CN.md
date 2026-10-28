@@ -22,6 +22,7 @@ type PostcssUnitConverter = PluginCreator<UserDefinedOptions>
 interface UserDefinedOptions {
   rules?: readonly ConversionRule[]
   unitRegex?: RegExp
+  transformVarFallbacks?: boolean
   unitPrecision?: number
   minValue?: number
   keepZeroUnit?: boolean
@@ -36,6 +37,7 @@ interface UserDefinedOptions {
 
 - `rules`：有序转换规则，先命中的先生效。
 - `unitRegex`：关闭默认 CSS tokenizer，改用自定义正则匹配。
+- `transformVarFallbacks`：转换 `var()` 直属第一个逗号之后的 fallback，默认 `false`；显式 `unitRegex` 优先，此时该选项不参与处理。
 - `unitPrecision`：输出值的小数精度。
 - `minValue`：全局源值绝对值阈值，默认 `0`；负长度也可转换。
 - `keepZeroUnit`：保留 `0px`、`0rem` 这类带单位的零值输出，而不是折叠成裸 `0`。
@@ -146,6 +148,10 @@ interface RuleContext {
 CSS 转义都按 CSS token 边界处理。字符串、注释与 URL 内容保持不变，包括
 转义引号和大写 `URL()`。默认完整跳过任意嵌套深度的 `var()` 及其 fallback；
 `calc()`、`min()` 等其他函数中的长度正常转换。
+
+开启 `transformVarFallbacks: true` 后递归转换 fallback 中的长度，仍保留变量名、
+字符串和 URL；不解析变量、不选择 fallback。未闭合的 `var()` 保持原文，
+不会触发其中的转换回调。
 
 显式 `unitRegex` 会完全替代 tokenizer 及上述保护。正则必须把数字放在第 1 个
 捕获组、单位放在第 2 个捕获组；缺少 `g` 标志时会自动补上，确保每个匹配项都会

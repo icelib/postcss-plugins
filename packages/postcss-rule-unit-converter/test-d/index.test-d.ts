@@ -76,3 +76,7 @@ expectType<ConversionRule>(noOptions())
 expectError(noOptions(2))
 expectError(definePreset<number>(() => presets.remToPx()))
 expectError(definePresetGroup<number>(() => [presets.remToPx()]))
+
+plugin({ transformVarFallbacks: true })
+plugin({ transformVarFallbacks: false })
+expectError(plugin({ transformVarFallbacks: 'true' }))

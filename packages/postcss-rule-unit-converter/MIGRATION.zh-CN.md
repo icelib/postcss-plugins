@@ -11,9 +11,11 @@
 
 规则引擎默认使用 CSS tokenizer，完整解析带符号数字与科学计数法，解码单位并按
 小写匹配，保护字符串、URL、标识符及任意深度的整个 `var()` fallback。
-回调收到带符号数值，`minValue` 按绝对值比较。旧配置若依赖正则子串匹配或
-转换 `var()` 中的内容，请查看 [匹配边界](./API.zh-CN.md#匹配边界)，仅在确实
-需要时显式配置 `unitRegex`。
+回调收到带符号数值，`minValue` 按绝对值比较。
+需要转换 `var()` fallback 时，优先设置 `transformVarFallbacks: true`，仍保护变量名、
+字符串和 URL，不解析变量。依赖正则子串匹配时，请查看
+[匹配边界](./API.zh-CN.md#匹配边界)，仅在确实需要时显式配置 `unitRegex`；
+自定义正则仍完整覆盖 fallback 选项。
 
 ## 什么时候该迁移
 

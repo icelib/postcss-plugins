@@ -22,6 +22,7 @@ type PostcssUnitConverter = PluginCreator<UserDefinedOptions>
 interface UserDefinedOptions {
   rules?: readonly ConversionRule[]
   unitRegex?: RegExp
+  transformVarFallbacks?: boolean
   unitPrecision?: number
   minValue?: number
   keepZeroUnit?: boolean
@@ -36,6 +37,7 @@ interface UserDefinedOptions {
 
 - `rules`: ordered conversion rules. First match wins.
 - `unitRegex`: opt out of default CSS tokenization and use a custom regex instead.
+- `transformVarFallbacks`: convert dimensions after the first direct comma in `var()` (default `false`). Ignored when `unitRegex` is supplied.
 - `unitPrecision`: decimal precision for generated values.
 - `minValue`: global minimum absolute source magnitude to convert (default `0`). Negative lengths remain eligible.
 - `keepZeroUnit`: keep `0px`/`0rem` style output instead of collapsing to bare `0`.
@@ -151,7 +153,10 @@ scientific notation, unit case, and CSS escapes follow CSS token boundaries.
 Strings, comments, and URL contents remain untouched, including escaped quotes
 and uppercase `URL()`. The whole `var()` function is skipped at every nesting
 depth, including its fallback; lengths in other functions such as `calc()` and
-`min()` are processed normally.
+`min()` are processed normally. With `transformVarFallbacks: true`, fallback
+dimensions are converted recursively while the variable name, strings, and URLs
+remain intact. This does not resolve variables or select their fallback. An
+unclosed `var()` stays unchanged and does not call conversion callbacks.
 
 An explicit `unitRegex` replaces tokenization entirely, including those protections.
 The expression must expose the numeric value as capture group 1 and the unit as

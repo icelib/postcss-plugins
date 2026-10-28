@@ -5,6 +5,7 @@ export type ResolvedOptions = Required<UserDefinedOptions>
 export const defaultOptions: ResolvedOptions = {
   rules: [] as Array<never>,
   unitRegex: undefined,
+  transformVarFallbacks: false,
   unitPrecision: 5,
   minValue: 0,
   keepZeroUnit: false,

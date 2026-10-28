@@ -25,6 +25,7 @@ const defaults = {
   replace: true,
   mediaQuery: false,
   minPixelValue: 0,
+  transformVarFallbacks: false,
 }
 
 const deviceRatio: NonNullable<PxTransformOptions['deviceRatio']> = {
@@ -288,6 +289,7 @@ function plugin(userOptions: PxTransformOptions = {}) {
   const preserveUnit = unConvertTargetUnit ?? targetUnit
   const unitPrecision = opts.unitPrecision ?? defaults.unitPrecision
   const minPixelValue = opts.minPixelValue ?? defaults.minPixelValue
+  const transformVarFallbacks = opts.transformVarFallbacks ?? defaults.transformVarFallbacks
   const isBlacklisted = hasSelectorBlackList
     ? createSelectorBlacklistMatcher(opts.selectorBlackList as readonly (string | RegExp)[], { cache: true })
     : undefined
@@ -296,6 +298,10 @@ function plugin(userOptions: PxTransformOptions = {}) {
     {
       from: unit => unit === 'px' || unit === 'rpx',
       transform(value, context) {
+        // tokenizer 解码单位用于规则匹配，平台原有大小写和 rpx 范围仍按原始拼写判断。
+        if (transformVarFallbacks && !transUnits.includes(context.rawUnit)) {
+          return undefined
+        }
         if (context.prop && !satisfyPropList(context.prop)) {
           return undefined
         }
@@ -318,7 +324,7 @@ function plugin(userOptions: PxTransformOptions = {}) {
           }
         }
 
-        if (!onePxTransform && value === 1) {
+        if (!onePxTransform && Math.abs(value) === 1) {
           return isHarmony
             ? {
                 value,
@@ -327,7 +333,7 @@ function plugin(userOptions: PxTransformOptions = {}) {
             : undefined
         }
 
-        if (value < minPixelValue) {
+        if (Math.abs(value) < minPixelValue) {
           return isHarmony
             ? {
                 value,
@@ -336,8 +342,11 @@ function plugin(userOptions: PxTransformOptions = {}) {
             : undefined
         }
 
+        // 正负号参与数值运算，用户回调继续接收旧正则提供的无符号匹配参数。
+        const match = transformVarFallbacks ? context.match.replace(/^[+-]/, '') : context.match
+        const rawValue = transformVarFallbacks ? context.rawValue.replace(/^[+-]/, '') : context.rawValue
         return {
-          value: value / getRootValue(context.input)(context.input, context.match, context.rawValue),
+          value: value / getRootValue(context.input)(context.input, match, rawValue),
           unit: targetUnit,
         }
       },
@@ -353,7 +362,8 @@ function plugin(userOptions: PxTransformOptions = {}) {
     replace: opts.replace ?? defaults.replace,
     rules,
     unitPrecision,
-    unitRegex: pxRegex(transUnits),
+    transformVarFallbacks,
+    unitRegex: transformVarFallbacks ? undefined : pxRegex(transUnits),
   }) as Plugin
 
   return {
