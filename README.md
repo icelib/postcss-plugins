@@ -17,8 +17,8 @@ Each package has its own README with usage and configuration details.
 
 ## Requirements
 
-- Node.js >= 22.22.1
-- pnpm (workspace managed)
+- Node.js `^22.23.4 || ^24.22.1 || >=26.12.1` for workspace tooling (Node.js 24.22.1 is used for releases)
+- pnpm 12.15.0 (workspace managed)
 
 ## Development
 
@@ -26,6 +26,11 @@ Each package has its own README with usage and configuration details.
 pnpm install
 pnpm dev
 ```
+
+Installation configures native Lefthook hooks through `repo tooling hooks install`.
+Pre-commit checks staged files, commit-msg validates conventional commits, and
+pre-push runs lint and typecheck. Run `pnpm repo:doctor --json` to inspect the
+workspace configuration.
 
 Documentation site commands:
 

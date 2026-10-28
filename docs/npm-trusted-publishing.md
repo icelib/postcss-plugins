@@ -1,9 +1,12 @@
 # npm Trusted Publishing
 
 Releases use npm Trusted Publishing instead of a long-lived npm access token.
-The release workflow requests the GitHub Actions OIDC token and repoctl 5.5.4
+The release workflow requests the GitHub Actions OIDC token and repoctl 6.3.0
 passes `--provenance` to `pnpm publish`. npm exchanges that token for a
-short-lived publish credential for the current workflow run.
+short-lived publish credential for the current workflow run. The workflow
+checks OIDC access and separates planning, verification, preparation, upload,
+confirmation, and finalization so interrupted releases can be inspected and
+recovered without changing the trusted publisher identity.
 
 ## npm package configuration
 

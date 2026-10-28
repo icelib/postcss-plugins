@@ -13,10 +13,10 @@ function encodePath(path) {
 }
 
 export function createGitHubClient({ token, repository, fetchImpl = fetch }) {
-  const { owner, name } = repositoryParts(repository)
-  const apiBase = `https://api.github.com/repos/${owner}/${name}`
-  async function request(path, options = {}) {
-    const response = await fetchImpl(`${apiBase}${path}`, {
+  const { owner } = repositoryParts(repository)
+  async function request(path, options = {}, targetRepository = repository) {
+    const target = repositoryParts(targetRepository)
+    const response = await fetchImpl(`https://api.github.com/repos/${target.owner}/${target.name}${path}`, {
       ...options,
       headers: {
         'accept': 'application/vnd.github+json',
@@ -67,8 +67,11 @@ export function createGitHubClient({ token, repository, fetchImpl = fetch }) {
         throw error
       }
     },
-    getRef: ref => request(`/git/ref/${encodePath(ref)}`),
+    getRef: (ref, targetRepository = repository) => request(`/git/ref/${encodePath(ref)}`, {}, targetRepository),
     getCommit: sha => request(`/git/commits/${sha}`),
+    compareCommits: (base, head) => request(`/compare/${base}...${head}`),
+    getStatus: sha => request(`/commits/${sha}/status`),
+    createStatus: (sha, status) => request(`/statuses/${sha}`, { method: 'POST', body: JSON.stringify(status) }),
     createBlob: content => request('/git/blobs', { method: 'POST', body: JSON.stringify({ content, encoding: 'utf-8' }) }),
     createTree: (baseTree, tree) => request('/git/trees', { method: 'POST', body: JSON.stringify({ base_tree: baseTree, tree }) }),
     createCommit: (message, tree, parents) => request('/git/commits', { method: 'POST', body: JSON.stringify({ message, tree, parents }) }),
@@ -86,5 +89,7 @@ export function createGitHubClient({ token, repository, fetchImpl = fetch }) {
     },
     createBranch: async (branch, sha) => request('/git/refs', { method: 'POST', body: JSON.stringify({ ref: `refs/heads/${branch}`, sha }) }),
     createPullRequest: input => request('/pulls', { method: 'POST', body: JSON.stringify(input) }),
+    listReleasePullRequests: (base, headRef) => request(`/pulls?state=open&base=${encodeURIComponent(base)}&head=${encodeURIComponent(`${owner}:${headRef}`)}`),
+    dispatchPrValidation: (number, ref) => request('/actions/workflows/pr-ci-manual.yml/dispatches', { method: 'POST', body: JSON.stringify({ ref, inputs: { pr_number: String(number) } }) }),
   }
 }
