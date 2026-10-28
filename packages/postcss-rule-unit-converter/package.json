@@ -1,7 +1,7 @@
 {
   "name": "postcss-rule-unit-converter",
   "type": "module",
-  "version": "0.2.6",
+  "version": "0.3.0",
   "description": "Convert CSS units with composable PostCSS rules and built-in presets.",
   "author": "ice breaker <1324318532@qq.com>",
   "license": "MIT",

@@ -1,7 +1,7 @@
 {
   "name": "postcss-units-to-px",
   "type": "module",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "description": "Convert multiple CSS units to px with PostCSS.",
   "author": "ice breaker <1324318532@qq.com>",
   "license": "MIT",

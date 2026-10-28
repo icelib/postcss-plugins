@@ -1,5 +1,12 @@
 # postcss-rem-to-viewport
 
+## 2.0.9
+
+### Patch Changes
+
+- Updated dependencies:
+  - postcss-rule-unit-converter@0.3.0
+
 ## 2.0.8
 
 ### Patch Changes
