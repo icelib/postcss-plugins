@@ -25,9 +25,6 @@ export default {
     stylelint: {
       rules: {},
     },
-    lintStaged: {
-      repoCommand: 'pnpm exec repo',
-    },
     vitest: {
       includeWorkspaceRootConfig: false,
       coverageExclude: ['**/dist/**'],
