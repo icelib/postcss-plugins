@@ -280,6 +280,7 @@ const plugin: PostcssUnitConverter = (options: UserDefinedOptions = {}) => {
   const {
     rules,
     unitRegex: customUnitRegex,
+    transformVarFallbacks,
     unitPrecision,
     minValue,
     keepZeroUnit,
@@ -358,7 +359,7 @@ const plugin: PostcssUnitConverter = (options: UserDefinedOptions = {}) => {
         }
       }
       else {
-        walkOptions.createValueTransformer = context => createValueTransformer(createConverter(context))
+        walkOptions.createValueTransformer = context => createValueTransformer(createConverter(context), transformVarFallbacks)
       }
       walkAndReplaceValues(walkOptions)
     },

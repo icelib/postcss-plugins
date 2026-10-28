@@ -20,6 +20,21 @@ const packageNames = [
 const cases = [
   {
     name: 'postcss-pxtrans',
+    create: plugin => plugin({ designWidth: 375, transformVarFallbacks: true }),
+    input: '.nut{height:var(--nutui-48px,48px);width:48px}',
+    output: '.nut{height:var(--nutui-48px,96rpx);width:96rpx}',
+  },
+  {
+    name: 'postcss-rule-unit-converter',
+    create: plugin => plugin({
+      rules: [{ from: 'px', to: 'rpx', factor: 2 }],
+      transformVarFallbacks: true,
+    }),
+    input: '.nut{height:var(--nutui-48px,48px);width:48px}',
+    output: '.nut{height:var(--nutui-48px,96rpx);width:96rpx}',
+  },
+  {
+    name: 'postcss-pxtrans',
     create: plugin => plugin(),
     input: '.a{margin:1px}',
     output: '.a{margin:1rpx}',

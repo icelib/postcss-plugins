@@ -182,10 +182,18 @@ RN eject:
 - `replace`: `boolean`, when `false` it appends a new declaration
 - `mediaQuery`: `boolean`, convert px in `@media`
 - `minPixelValue`: `number`, values lower than this are not converted (Harmony still converts to `ch`)
+- `transformVarFallbacks`: `boolean`, default `false`; convert fallback dimensions using CSS tokens while keeping variable names, strings, and URLs intact
 - `onePxTransform`: `boolean`, whether to convert `1px` (Harmony still converts `PX` to `ch`)
 - `exclude`: `Array<string | RegExp> | (filePath?: string) => boolean`, skip the whole file when matched
 
 > Note: internally this plugin reuses utilities from `postcss-plugin-shared` for prop matching and unit regex building.
+
+With `transformVarFallbacks: true`, `var(--size48px, 48px)` becomes
+`var(--size48px, 96rpx)` for `designWidth: 375`. This mode preserves platform unit
+case rules and unsigned `rootValue(input, m, value)` callback arguments while
+handling complete signed/scientific values. Negative zero may normalize to zero.
+The default `false` retains the legacy regex path. This option does not change
+`postcss-rem-to-responsive-pixel`.
 
 ### Choosing Between `exclude`, `selectorBlackList`, and `propList`
 

@@ -20,7 +20,9 @@ Use `propList` for property-level control, `selectorBlackList` for selectors, an
 
 `postcss-rule-unit-converter` uses CSS tokens by default: signed/scientific values
 and complete decoded units are supported, while strings, URLs, identifiers, and
-the whole `var()` fallback remain untouched. An explicit `unitRegex` replaces
+the whole `var()` fallback remain untouched. Set `transformVarFallbacks: true` to
+convert fallback dimensions recursively while preserving variable names, strings,
+and URLs. An explicit `unitRegex` overrides the fallback option and replaces
 that protection. The first matching rule wins even when it returns `undefined`,
 and conversions do not chain in one run; repeated processing may convert again.
 See the [API reference](/plugins/postcss-rule-unit-converter/api#matching-boundaries).

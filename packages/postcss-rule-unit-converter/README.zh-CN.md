@@ -231,7 +231,7 @@ const result = await postcss([
 - 使用 `presets.viewportPresetGroup()` 时，建议显式指定 `viewportUnit: 'vw'` 或 `viewportUnit: 'vh'`。
 - 在业务里沉淀可复用 preset 时，优先使用 `definePreset(...)` 和 `definePresetGroup(...)`。
 - `RuleContext.fromUnit` 是归一化为小写的源单位（默认 tokenizer 还会解码转义）；`rawUnit` 保留原始大小写与转义；`rawValue` 是 `Number(...)` 前带符号的数字文本；`match` 是完整匹配片段。
-- 如果需要主动处理 `var()` 中的内容，可以使用自定义 `unitRegex`，并自行保证匹配边界。
+- 开启 `transformVarFallbacks: true` 可安全转换 `var()` fallback 内的长度，默认 `false`；只有需要完全自定义匹配时才使用 `unitRegex`。
 - 如果你想直接抄场景配置，优先看 cookbook。
 
 ## 匹配与处理边界
@@ -241,6 +241,9 @@ const result = await postcss([
 按完整数值解析。`rem` 规则不会误改 `2remfoo` 的 `remfoo` 单位，也不会误改
 `foo2rem` 这样的标识符。字符串和 URL 保持原样，包括转义引号和大写 `URL()`。
 默认完整跳过任意嵌套深度的 `var()`；`calc()`、`min()` 等其他函数里的长度仍可转换。
+开启 `transformVarFallbacks: true` 后转换直属第一个逗号之后的 fallback，保护变量名、
+字符串和 URL；不解析变量、不选择 fallback，未闭合的 `var()` 保持原文。显式
+`unitRegex` 始终完整覆盖 tokenizer，此时 fallback 选项不参与处理。
 
 回调收到真实带符号数值：`-2rem` 传入 `-2`，`1e3rem` 传入 `1000`。
 全局与单规则的 `minValue` 都按源值绝对值比较，例如 `minValue: 2` 会转换

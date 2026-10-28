@@ -74,6 +74,8 @@ export interface PxTransformDeviceRatio {
  * }
  */
 export interface PxTransformOptions {
+  /** 转换 var() fallback 内的完整长度 token；默认 false，保留既有正则行为。 */
+  transformVarFallbacks?: boolean
   /**
    * Target platform.
    *

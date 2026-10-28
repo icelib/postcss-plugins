@@ -16,3 +16,7 @@ const options: PxTransformOptions = {
 expectAssignable<PxTransformOptions>(options)
 pxtrans(options)
 expectError(pxtrans({ platform: 'web' }))
+
+pxtrans({ transformVarFallbacks: true })
+pxtrans({ transformVarFallbacks: false })
+expectError(pxtrans({ transformVarFallbacks: 'true' }))

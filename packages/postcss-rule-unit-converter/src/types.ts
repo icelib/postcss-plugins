@@ -105,6 +105,8 @@ export interface UserDefinedOptions {
    * The expression controls its own token boundaries and protected functions.
    */
   unitRegex?: RegExp | undefined
+  /** 转换 var() 逗号之后的 fallback；默认 false，显式 unitRegex 仍完整覆盖此策略。 */
+  transformVarFallbacks?: boolean
   unitPrecision?: number
   /** Minimum absolute magnitude of the original value. Defaults to 0. */
   minValue?: number
