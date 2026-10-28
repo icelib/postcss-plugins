@@ -1,5 +1,12 @@
 # postcss-units-to-px
 
+## 0.2.7
+
+### Patch Changes
+
+- Updated dependencies:
+  - postcss-rule-unit-converter@0.3.0
+
 ## 0.2.6
 
 ### Patch Changes

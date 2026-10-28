@@ -1,5 +1,12 @@
 # postcss-rem-to-responsive-pixel
 
+## 7.0.9
+
+### Patch Changes
+
+- Updated dependencies:
+  - postcss-rule-unit-converter@0.3.0
+
 ## 7.0.8
 
 ### Patch Changes
