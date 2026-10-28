@@ -201,7 +201,9 @@ Local validation used macOS arm64, Node 24.22.1, and pnpm 12.15.0:
   lines 97.75%.
 - `pnpm check:cjs` passed against packed artifacts for all six packages,
   including callable plugin exports, matching defaults, ESM behavior, and
-  the presets/defaults subpaths. Public package manifests are unchanged.
+  the presets/defaults subpaths. Packaging uses Execa's platform-aware pnpm
+  resolution so Windows command shims work with argument-array execution.
+  Public package manifests are unchanged.
 - The website built successfully. Checks covered 27 bilingual pages/assets,
   the 404 page, and security headers. Wrangler 4.154.0 dry-run passed.
 - The benchmark entry completed eight shared-utility benchmarks and parsed

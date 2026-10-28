@@ -5,6 +5,7 @@ import { createRequire } from 'node:module'
 import os from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import { execaSync } from 'execa'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const rootRequire = createRequire(import.meta.url)
@@ -75,7 +76,8 @@ function packPackage(fixture, name) {
     throw new Error(`Missing ${distPath}; run pnpm build before check:cjs`)
   }
 
-  execFileSync('pnpm', [
+  // Resolve Windows pnpm.cmd shims while preserving the argument boundaries.
+  execaSync('pnpm', [
     '--filter',
     name,
     'pack',
